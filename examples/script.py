@@ -271,6 +271,10 @@ def draw_pipe(primitive_name, arguments):
 	for y in range(3):
 		point_10.append(float(arguments[57+y]))
 
+	points = [point_1, point_2, point_3, point_4, point_5, 
+			  point_6, point_7, point_8, point_9, point_10]
+
+	brl_db.pipe(primitive_name, points)
 
 switcher = {"set" : parse_var,
 			"in"  : parse_primitive,
