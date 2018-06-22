@@ -216,6 +216,20 @@ def draw_eto(primitive_name, arguments):
 	return
 
 def draw_arbn(primitive_name, arguments):
+	plane_1 = [tuple([float(x) for x in arguments[:3]])]
+	plane_1.append(float(arguments[3]))
+	plane_2 = [tuple([float(x) for x in arguments[4:7]])]
+	plane_2.append(float(arguments[7]))
+	plane_3 = [tuple([float(x) for x in arguments[8:11]])]
+	plane_3.append(float(arguments[11]))
+	plane_4 = [tuple([float(x) for x in arguments[12:15]])]
+	plane_4.append(float(arguments[15]))
+	plane_5 = [tuple([float(x) for x in arguments[16:19]])]
+	plane_5.append(float(arguments[19]))
+	plane_6 = [tuple([float(x) for x in arguments[20:23]])]
+	plane_6.append(float(arguments[23]))
+	planes = [plane_1, plane_2, plane_3, plane_4, plane_5, plane_6]
+	brl_db.arbn(primitive_name, planes)
 	return
 
 def draw_particle(primitive_name, arguments):
