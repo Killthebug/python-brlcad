@@ -240,7 +240,37 @@ def draw_particle(primitive_name, arguments):
 	return
 
 def draw_pipe(primitive_name, arguments):
-	return
+	point_1 = [tuple(float(x) for x in arguments[:3])]
+	for y in range(3):
+		point_1.append(float(arguments[3+y]))
+	point_2 = [tuple(float(x) for x in arguments[6:9])]
+	for y in range(3):
+		point_2.append(float(arguments[9+y]))
+	point_3 = [tuple(float(x) for x in arguments[12:15])]
+	for y in range(3):
+		point_3.append(float(arguments[15+y]))
+	point_4 = [tuple(float(x) for x in arguments[18:21])]
+	for y in range(3):
+		point_4.append(float(arguments[21+y]))
+	point_5 = [tuple(float(x) for x in arguments[24:27])]
+	for y in range(3):
+		point_5.append(float(arguments[27+y]))
+	point_6 = [tuple(float(x) for x in arguments[30:33])]
+	for y in range(3):
+		point_6.append(float(arguments[33+y]))
+	point_7 = [tuple(float(x) for x in arguments[36:39])]
+	for y in range(3):
+		point_7.append(float(arguments[39+y]))
+	point_8 = [tuple(float(x) for x in arguments[42:45])]
+	for y in range(3):
+		point_8.append(float(arguments[45+y]))
+	point_9 = [tuple(float(x) for x in arguments[48:51])]
+	for y in range(3):
+		point_9.append(float(arguments[51+y]))
+	point_10 = [tuple(float(x) for x in arguments[54:57])]
+	for y in range(3):
+		point_10.append(float(arguments[57+y]))
+
 
 switcher = {"set" : parse_var,
 			"in"  : parse_primitive,
