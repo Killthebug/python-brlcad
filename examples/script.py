@@ -12,8 +12,28 @@ import os
 import brlcad.wdb as wdb
 from brlcad.primitives import *
 
-def parse_var():
+global_vars = {}
+
+def parse_var(command):
+	var_name = str(command[1])
+	var_val  = float(command[2])
+	global_vars[var_name] = var_val
 	return
+
+def check_vars(command):
+	'''
+	The +3 here is to account for the first three words in a tcl command
+	Eg : 
+	set i 1
+	set j 5
+	in ball.s sph i 2 j 0.75
+
+	would return
+	in ball.s sph 1 2 5 0.75
+	'''
+	for iterator in range(len(command[3:])):
+		if str(command[iterator+3]) in global_vars:
+			command[iterator+3] = global_vars[str(command[iterator+3])]
 
 def parse_combination():
 	return
@@ -31,6 +51,8 @@ def read_file(filename):
 def parse_primitive(command):
 	primitive_name = command[1]
 	primitive_type = command[2]
+	check_vars(command)
+	print(command)
 	'''
 	Further functionality to parse variables will be included before this
 	step. To the draw_primitive function, only pure arguments will be
