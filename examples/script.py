@@ -15,7 +15,7 @@ from brlcad.primitives import *
 global_vars = {}
 
 def parse_var(command):
-	var_name = str(command[1])
+	var_name = "$"+str(command[1])
 	var_val  = float(command[2])
 	global_vars[var_name] = var_val
 	return
@@ -41,6 +41,9 @@ def parse_combination():
 def argument_check():
 	return
 
+def primitive_union():
+	return
+
 def read_file(filename):
 	if not os.path.isfile(filename):
 		raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
@@ -51,7 +54,7 @@ def read_file(filename):
 def parse_primitive(command):
 	primitive_name = command[1]
 	primitive_type = command[2]
-	check_vars(command)
+	check_vars(command)					#Replace any variables with constants
 	print(command)
 	'''
 	Further functionality to parse variables will be included before this
@@ -300,6 +303,7 @@ def draw_pipe(primitive_name, arguments):
 
 switcher = {"set" : parse_var,
 			"in"  : parse_primitive,
+			"u"	  : primitive_union,
 			"comb": parse_combination}
 
 primitive_map = {"sph"   : draw_sphere,
