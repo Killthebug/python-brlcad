@@ -3,6 +3,11 @@ This is a python module that deals with tcl scripts to create procedural geometr
 
 Usage :
 		python script.py <<script_name>>.tcl <<database_name>>.g
+
+Assumptions :
+** Global vars are all defined before all commands
+** There are no undefined varaibles referenced anywhere in the script
+** 
 '''
 
 import argparse
@@ -13,6 +18,7 @@ import brlcad.wdb as wdb
 from brlcad.primitives import *
 
 global_vars = {}
+script_procedures  = {}
 
 def parse_var(command):
 	var_name = "$"+str(command[1])
@@ -34,6 +40,48 @@ def check_vars(command):
 	for iterator in range(len(command[3:])):
 		if str(command[iterator+3]) in global_vars:
 			command[iterator+3] = global_vars[str(command[iterator+3])]
+
+def initalize_global_vars(commands):
+	for element in commands:
+		element = element.split()
+		if element == []:			#Blank line
+			continue
+		command_type = element[0]
+		if command_type == "set": 
+			switcher[command_type](element)
+
+def parse_procs(commands, proc_line_position):
+	for iterator in range(len(proc_line_position)):
+		proc_start = proc_line_position[iterator]
+		if iterator != len(proc_line_position) - 1 :  #Checking if this is the last proc defintion
+			proc_end = iterator + 1
+			proc_span = commands[proc_start : proc_end]
+		else :
+			proc_end = -1
+			proc_span = commands[proc_start:]
+
+		proc_string = " ".join(proc_span)
+		print(proc_string)
+
+
+def initialize_procs(commands):
+	"""
+	Here we iterate over the script based on line numbers
+	because we're uncertain about how big/small a proc is
+	and we'll need to be skipping multiple lines after we
+	parse each proc
+	"""
+	proc_line_position = []  		#Keeps tracks of lines numbers of proc definiton
+	
+	for iterator in range(len(commands)):
+		element = commands[iterator].split()
+		if element == []:			#Blank line
+			continue
+		command_type = element[0]
+		if command_type == "proc":
+			proc_line_position.append(iterator)
+
+	parse_procs(commands, proc_line_position)
 
 def parse_combination():
 	return
@@ -64,8 +112,12 @@ def parse_primitive(command):
 	primitive_map[primitive_type](primitive_name, command[3:])
 
 
-def parse_script(database_name, units, procedures):
-	for element in procedures:
+def parse_script(database_name, units, commands):
+	initalize_global_vars(commands)
+	initialize_procs(commands)
+	exit()
+
+	for element in commands:
 		element = element.split()
 		command_type = element[0]
 		switcher[command_type](element)
@@ -143,17 +195,17 @@ def draw_arb8(primitive_name, arguments):
 
 def draw_ellipsoid(primitive_name, arguments):
 	center = [float(x) for x in arguments[:3]]
-	a      = [float(x) for x in arguments[3:6]]
-	b      = [float(x) for x in arguments[6:9]]
-	c      = [float(x) for x in arguments[9:]]
+	a	  = [float(x) for x in arguments[3:6]]
+	b	  = [float(x) for x in arguments[6:9]]
+	c	  = [float(x) for x in arguments[9:]]
 	brl_db.ellipsoid(primitive_name, center, a, b, c)
 	return
 
 def draw_torus(primitive_name, arguments):
 	center = [float(x) for x in arguments[:3]]
-	n      = [float(x) for x in arguments[3:6]]
+	n	  = [float(x) for x in arguments[3:6]]
 	r_revolution = float(arguments[6])
-	r_cross      = float(arguments[7])
+	r_cross	  = float(arguments[7])
 	brl_db.torus(primitive_name, center, n,
 				 r_revolution, r_cross)
 	return
@@ -177,7 +229,7 @@ def draw_tgc(primitive_name, arguments):
 
 def draw_cone(primitive_name, arguments):
 	base = [float(x) for x in arguments[:3]]
-	n    = [float(x) for x in arguments[3:6]]
+	n	= [float(x) for x in arguments[3:6]]
 	h, r_base, r_top = [float(x) for x in arguments[6:]]
 	brl_db.cone(primitive_name, base, n, h, r_base, r_top)
 	return
@@ -304,6 +356,7 @@ def draw_pipe(primitive_name, arguments):
 switcher = {"set" : parse_var,
 			"in"  : parse_primitive,
 			"u"	  : primitive_union,
+			"proc": parse_procs,
 			"comb": parse_combination}
 
 primitive_map = {"sph"   : draw_sphere,
@@ -333,10 +386,10 @@ primitive_map = {"sph"   : draw_sphere,
 
 if __name__ == "__main__":
 	argv = sys.argv
-	procedures = read_file(argv[1])
-	database_name = ' '.join(procedures[0].split()[1:])
-	units = procedures[1].split()[1]
-	procedures = procedures[2:]
+	commands = read_file(argv[1])
+	database_name = ' '.join(commands[0].split()[1:])
+	units = commands[1].split()[1]
+	commands = commands[2:]
 	brl_db = wdb.WDB(database_name, "db.g")
-	parse_script(database_name, units, procedures)
+	parse_script(database_name, units, commands)
 
