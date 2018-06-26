@@ -7,7 +7,23 @@ Usage :
 Assumptions :
 ** Global vars are all defined before all commands
 ** There are no undefined varaibles referenced anywhere in the script
+** All global variables are defined the first proc definition
 ** 
+
+How the script parser works :
+** Read script
+** Parse global variables
+** Parse proc (procedures)
+	** Every proc is an object of the procedure class (proc_interpreter.py)
+	** Intialization takes place with proc_name and global vars passed to the object
+** Parse in commands and proc calls in parallel
+** Proc calls:
+	** Substitue value of of global vars in commands in procs
+	** Calculate value of local variables
+		** Value of local variables can depend on global variables or passed arguments
+	** Replace all variables in the proc with their constant values
+	** Return a list of commands (Eg : in sph.s sph ...) from the prob objects
+** In a serial order draw all the shapes as required from this script module.
 '''
 
 import argparse
