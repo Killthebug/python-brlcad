@@ -36,6 +36,12 @@ from brlcad.primitives import *
 global_vars = {}
 script_procedures  = {}
 
+def index_containing_substring(the_list, substring):
+	for i, s in enumerate(the_list):
+		if substring in s:
+			  return i
+	return -1
+
 def parse_var(command):
 	var_name = "$"+str(command[1])
 	var_val  = float(command[2])
@@ -58,27 +64,34 @@ def check_vars(command):
 			command[iterator+3] = global_vars[str(command[iterator+3])]
 
 def initalize_global_vars(commands):
-	for element in commands:
+	first_proc_line = index_containing_substring(commands, "proc")
+	for iterator in range(0, first_proc_line):
+		element = commands[iterator]
 		element = element.split()
 		if element == []:			#Blank line
 			continue
 		command_type = element[0]
 		if command_type == "set": 
 			switcher[command_type](element)
+	print(global_vars)				#debug
 
 def parse_procs(commands, proc_line_position):
+	proc_list = []
+	print(proc_line_position)
 	for iterator in range(len(proc_line_position)):
 		proc_start = proc_line_position[iterator]
+
 		if iterator != len(proc_line_position) - 1 :  #Checking if this is the last proc defintion
-			proc_end = iterator + 1
+			proc_end = proc_line_position[iterator + 1]
 			proc_span = commands[proc_start : proc_end]
 		else :
 			proc_end = -1
 			proc_span = commands[proc_start:]
 
 		proc_string = " ".join(proc_span)
-		print(proc_string)
-
+		print(proc_string.strip())				#debug
+		proc_list.append(proc_string.strip())
+	return proc_list
 
 def initialize_procs(commands):
 	"""
@@ -97,7 +110,7 @@ def initialize_procs(commands):
 		if command_type == "proc":
 			proc_line_position.append(iterator)
 
-	parse_procs(commands, proc_line_position)
+	proc_list = parse_procs(commands, proc_line_position)
 
 def parse_combination():
 	return
