@@ -75,6 +75,14 @@ def initalize_global_vars(commands):
 			switcher[command_type](element)
 	print(global_vars)				#debug
 
+def create_proc_objects(proc_list):
+	for element in proc_list:
+		temp_list = element.split("\n")[0]
+		proc_name = temp_list.split()[1]
+		proc_args = temp_list.split("{")[1].split('}')[0].split()
+		print(proc_args)											#debug
+		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars)
+
 def parse_procs(commands, proc_line_position):
 	proc_list = []
 	print(proc_line_position)
@@ -111,6 +119,7 @@ def initialize_procs(commands):
 			proc_line_position.append(iterator)
 
 	proc_list = parse_procs(commands, proc_line_position)
+	create_proc_objects(proc_list)
 
 def parse_combination():
 	return

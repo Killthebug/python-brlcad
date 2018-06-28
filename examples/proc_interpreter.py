@@ -20,7 +20,7 @@ right 100 $i 					#Procedure call
 -------------------------------------------------------------
 
 Currently the proc_interpreter can
-**
+** _do nothing_
 **
 **
 **
@@ -37,8 +37,9 @@ class Procudre():
 	Each unique procedure is an instance of this class
 	"""
 
-	def __init__(self, proc_name, global_vars):
+	def __init__(self, proc_name, proc_args, global_vars):
 		self.name = proc_name
+		self.args = proc_args
 		self.global_vars = global_vars
 
 	def initialize(self):
