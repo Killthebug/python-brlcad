@@ -31,16 +31,14 @@ import sys
 import re
 import os
 
-class Procudre():
+class Procedure():
 	"""
 	Common class for all procedures.
 	Each unique procedure is an instance of this class
 	"""
 
-	def __init__(self, proc_name, proc_args, global_vars):
+	def __init__(self, proc_name, proc_args, global_vars, element):
 		self.name = proc_name
 		self.args = proc_args
 		self.global_vars = global_vars
-
-	def initialize(self):
-
+		self.proc_string = element

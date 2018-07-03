@@ -25,12 +25,14 @@ How the script parser works :
 	** Return a list of commands (Eg : in sph.s sph ...) from the prob objects
 ** In a serial order draw all the shapes as required from this script module.
 '''
-
+from __future__ import division
 import argparse
 import errno
 import sys
 import os
 import brlcad.wdb as wdb
+from proc_interpreter import Procedure
+from arithematic_parser import *
 from brlcad.primitives import *
 
 global_vars = {}
@@ -40,7 +42,21 @@ def index_containing_substring(the_list, substring):
 	for i, s in enumerate(the_list):
 		if substring in s:
 			  return i
-	return -1
+	return len(the_list)
+
+def find_between(s, first, last):
+    try:
+        start = s.index( first ) + len( first )
+        end = s.index( last, start )
+        return s[start:end]
+    except ValueError:
+        return ""
+
+def replace_vars(my_string):
+	x = my_string
+	for variable in global_vars:
+		x = x.replace(variable, str(global_vars[variable]))
+	return x
 
 def parse_var(command):
 	var_name = "$"+str(command[1])
@@ -73,7 +89,46 @@ def initalize_global_vars(commands):
 		command_type = element[0]
 		if command_type == "set": 
 			switcher[command_type](element)
-	print(global_vars)				#debug
+
+def calculate_value(text):
+	print(text)
+	text = text.replace("{", "(")
+	text = text.replace("}", ")")
+	text = text.strip()
+	lexer = Lexer(text)
+	interpreter = Interpreter(lexer)
+	result = interpreter.expr()
+	print(result)
+	return float(result)
+
+def evaluate_expressions(commands):
+	print("ERE")
+	for command in commands:
+		if "exp" in command:
+			broken = command.split("[")
+			mystring = ""
+			'''
+			We iterate over any every command after its split at "["
+			and evaluate any expressions that might be present.
+			Because that's how expressions are meant to be written
+			'''
+			for element in broken:
+				if "exp" in element:
+					'''
+					mystring now holds the the text contained within an expression
+					Eg : 
+					> [exp{$j - $i}]
+					> mystring = {$j - $i}
+					'''
+					my_string = find_between(element, "exp", "]")
+					text = replace_vars(my_string)
+					result = calculate_value(text)
+					to_replace = "[" + element
+					print(to_replace)
+					command = command.replace(to_replace.strip(), str(result))
+					print(command)
+
+
 
 def create_proc_objects(proc_list):
 	for element in proc_list:
@@ -81,7 +136,8 @@ def create_proc_objects(proc_list):
 		proc_name = temp_list.split()[1]
 		proc_args = temp_list.split("{")[1].split('}')[0].split()
 		print(proc_args)											#debug
-		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars)
+		print("Creating Object for each procedure now")
+		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars, element)
 
 def parse_procs(commands, proc_line_position):
 	proc_list = []
@@ -153,6 +209,7 @@ def parse_primitive(command):
 def parse_script(database_name, units, commands):
 	initalize_global_vars(commands)
 	initialize_procs(commands)
+	evaluate_expressions(commands)
 	exit()
 
 	for element in commands:
