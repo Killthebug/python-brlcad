@@ -102,8 +102,7 @@ def calculate_value(text):
 	return float(result)
 
 def evaluate_expressions(commands):
-	print("ERE")
-	for command in commands:
+	for index, command in enumerate(commands):
 		if "exp" in command:
 			broken = command.split("[")
 			mystring = ""
@@ -112,6 +111,7 @@ def evaluate_expressions(commands):
 			and evaluate any expressions that might be present.
 			Because that's how expressions are meant to be written
 			'''
+			print('here')
 			for element in broken:
 				if "exp" in element:
 					'''
@@ -126,9 +126,8 @@ def evaluate_expressions(commands):
 					to_replace = "[" + element
 					print(to_replace)
 					command = command.replace(to_replace.strip(), str(result))
+					commands[index] = command
 					print(command)
-
-
 
 def create_proc_objects(proc_list):
 	for element in proc_list:
@@ -210,7 +209,6 @@ def parse_script(database_name, units, commands):
 	initalize_global_vars(commands)
 	initialize_procs(commands)
 	evaluate_expressions(commands)
-	exit()
 
 	for element in commands:
 		element = element.split()
