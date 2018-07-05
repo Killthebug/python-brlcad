@@ -42,3 +42,18 @@ class Procedure():
 		self.args = proc_args
 		self.global_vars = global_vars
 		self.proc_string = element
+		self.local_vars = {}
+		self.commands = self.string.split("\n")
+
+	def calculate_vars(self):
+
+
+
+	def execute(self, arguments):
+		for x in zip(self.args, arguments):
+			var = '$' + str(x[0])
+			value = float(x[1])
+			self.local_vars[var] = value
+		self.calculate_vars()
+		self.evaluate_exp()
+		self.execute_maps()

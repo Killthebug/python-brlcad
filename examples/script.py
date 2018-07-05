@@ -80,6 +80,11 @@ def check_vars(command):
 			command[iterator+3] = global_vars[str(command[iterator+3])]
 
 def initalize_global_vars(commands):
+	'''
+	Find global variables and load them into the dictionary.
+	It is also assumed that all global variables are defined before
+	any of the procedures or in statements
+	'''
 	first_proc_line = index_containing_substring(commands, "proc")
 	for iterator in range(0, first_proc_line):
 		element = commands[iterator]
@@ -91,17 +96,21 @@ def initalize_global_vars(commands):
 			switcher[command_type](element)
 
 def calculate_value(text):
-	print(text)
 	text = text.replace("{", "(")
 	text = text.replace("}", ")")
 	text = text.strip()
 	lexer = Lexer(text)
 	interpreter = Interpreter(lexer)
 	result = interpreter.expr()
-	print(result)
 	return float(result)
 
 def evaluate_expressions(commands):
+	'''
+	This function is responsible for evaluating expressions like
+	exp{$i+$j} or exp{$i*{$j/$k}}.
+	It evaluated these expressions and replaces them with their
+	float result in the actual "commands" list
+	'''
 	for index, command in enumerate(commands):
 		if "exp" in command:
 			broken = command.split("[")
@@ -130,6 +139,11 @@ def evaluate_expressions(commands):
 					print(command)
 
 def create_proc_objects(proc_list):
+	'''
+	Creates objects of the procedure class.
+	Each procedure is encapsulated as a class and it's object is
+	executed with a unique set of arguments whenever required
+	''' 
 	for element in proc_list:
 		temp_list = element.split("\n")[0]
 		proc_name = temp_list.split()[1]
@@ -139,6 +153,11 @@ def create_proc_objects(proc_list):
 		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars, element)
 
 def parse_procs(commands, proc_line_position):
+	'''
+	This function is responsible for extracting proc as strings
+	from the script.
+	It returns a list of all procedures called proc_list
+	'''
 	proc_list = []
 	print(proc_line_position)
 	for iterator in range(len(proc_line_position)):
