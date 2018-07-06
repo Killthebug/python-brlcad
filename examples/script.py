@@ -45,12 +45,12 @@ def index_containing_substring(the_list, substring):
 	return len(the_list)
 
 def find_between(s, first, last):
-    try:
-        start = s.index( first ) + len( first )
-        end = s.index( last, start )
-        return s[start:end]
-    except ValueError:
-        return ""
+	try:
+		start = s.index( first ) + len( first )
+		end = s.index( last, start )
+		return s[start:end]
+	except ValueError:
+		return ""
 
 def replace_vars(my_string):
 	x = my_string
@@ -94,6 +94,48 @@ def initalize_global_vars(commands):
 		command_type = element[0]
 		if command_type == "set": 
 			switcher[command_type](element)
+
+def check_parentheses(my_string):
+	'''
+	Return True if the parentheses in string s match, otherwise False.
+	'''
+	j = 0
+	for c in my_string:
+		if c == '}':
+			j -= 1
+			if j < 0:
+				return False
+		elif c == '{':
+			j += 1
+	return j == 0
+
+def find_parentheses(s):
+	''' 
+	Find and return the location of the matching parentheses pairs in s.
+
+	Given a string, s, return a dictionary of start: end pairs giving the
+	indexes of the matching parentheses in s. Suitable exceptions are
+	raised if s contains unbalanced parentheses.
+
+	# The indexes of the open parentheses are stored in a stack, implemented
+	# as a list
+
+	'''
+	stack = []
+	parentheses_locs = {}
+	for i, c in enumerate(s):
+		if c == '(':
+			stack.append(i)
+		elif c == ')':
+			try:
+				parentheses_locs[stack.pop()] = i
+			except IndexError:
+				raise IndexError('Too many close parentheses at index {}'
+																.format(i))
+	if stack:
+		raise IndexError('No matching close parenthesis to open parenthesis '
+						 'at index {}'.format(stack.pop()))
+	return parentheses_locs
 
 def calculate_value(text):
 	text = text.replace("{", "(")
@@ -168,7 +210,17 @@ def parse_procs(commands, proc_line_position):
 			proc_span = commands[proc_start : proc_end]
 		else :
 			proc_end = -1
-			proc_span = commands[proc_start:]
+			temp_string = commands[proc_start]
+			proc_span = commands[proc_start+1:]
+			for line_number, line in enumerate(proc_span):
+				temp_string += line
+				result = check_parentheses(temp_string)
+				if result:
+					#print("end")
+					#print(temp_string)
+					print(line_number)
+					proc_span = [temp_string]
+					break
 
 		proc_string = " ".join(proc_span)
 		print(proc_string.strip())				#debug
@@ -227,6 +279,7 @@ def parse_primitive(command):
 def parse_script(database_name, units, commands):
 	initalize_global_vars(commands)
 	initialize_procs(commands)
+	exit()
 	evaluate_expressions(commands)
 
 	for element in commands:
