@@ -36,7 +36,7 @@ from arithematic_parser import *
 from brlcad.primitives import *
 
 global_vars = {}
-script_procedures  = {}
+script_procedures = {}
 
 def index_containing_substring(the_list, substring):
 	for i, s in enumerate(the_list):
@@ -99,17 +99,17 @@ def check_parentheses(my_string):
 	'''
 	Return True if the parentheses in string s match, otherwise False.
 	'''
-	j = 0
-	for c in my_string:
-		if c == '}':
-			j -= 1
-			if j < 0:
+	iterator_1 = 0
+	for iterator_2 in my_string:
+		if iterator_2 == '}':
+			iterator_1 -= 1
+			if iterator_1 < 0:
 				return False
-		elif c == '{':
-			j += 1
-	return j == 0
+		elif iterator_2 == '{':
+			iterator_1 += 1
+	return iterator_1 == 0
 
-def find_parentheses(s):
+def find_parentheses(my_string):
 	''' 
 	Find and return the location of the matching parentheses pairs in s.
 
@@ -123,10 +123,10 @@ def find_parentheses(s):
 	'''
 	stack = []
 	parentheses_locs = {}
-	for i, c in enumerate(s):
-		if c == '(':
+	for i, iterator_1 in enumerate(my_string):
+		if iterator_1 == '(':
 			stack.append(i)
-		elif c == ')':
+		elif iterator_1 == ')':
 			try:
 				parentheses_locs[stack.pop()] = i
 			except IndexError:
@@ -146,15 +146,17 @@ def calculate_value(text):
 	result = interpreter.expr()
 	return float(result)
 
-def evaluate_expressions(commands):
+def evaluate_expressions(commands, procs_end):
 	'''
 	This function is responsible for evaluating expressions like
 	exp{$i+$j} or exp{$i*{$j/$k}}.
 	It evaluated these expressions and replaces them with their
 	float result in the actual "commands" list
 	'''
-	for index, command in enumerate(commands):
+	print(procs_end)
+	for index, command in enumerate(commands[procs_end:]):
 		if "exp" in command:
+			print(command)
 			broken = command.split("[")
 			mystring = ""
 			'''
@@ -162,7 +164,6 @@ def evaluate_expressions(commands):
 			and evaluate any expressions that might be present.
 			Because that's how expressions are meant to be written
 			'''
-			print('here')
 			for element in broken:
 				if "exp" in element:
 					'''
@@ -201,6 +202,7 @@ def parse_procs(commands, proc_line_position):
 	It returns a list of all procedures called proc_list
 	'''
 	proc_list = []
+	procs_end = 0
 	print(proc_line_position)
 	for iterator in range(len(proc_line_position)):
 		proc_start = proc_line_position[iterator]
@@ -216,16 +218,13 @@ def parse_procs(commands, proc_line_position):
 				temp_string += line
 				result = check_parentheses(temp_string)
 				if result:
-					#print("end")
-					#print(temp_string)
-					print(line_number)
+					procs_end = proc_start+line_number+2 #This keeps track of the last line of proc definition
 					proc_span = [temp_string]
 					break
 
 		proc_string = " ".join(proc_span)
-		print(proc_string.strip())				#debug
 		proc_list.append(proc_string.strip())
-	return proc_list
+	return proc_list, procs_end
 
 def initialize_procs(commands):
 	"""
@@ -244,8 +243,9 @@ def initialize_procs(commands):
 		if command_type == "proc":
 			proc_line_position.append(iterator)
 
-	proc_list = parse_procs(commands, proc_line_position)
+	proc_list, procs_end = parse_procs(commands, proc_line_position)
 	create_proc_objects(proc_list)
+	return procs_end
 
 def parse_combination():
 	return
@@ -278,14 +278,25 @@ def parse_primitive(command):
 
 def parse_script(database_name, units, commands):
 	initalize_global_vars(commands)
-	initialize_procs(commands)
-	exit()
-	evaluate_expressions(commands)
+	procs_end = initialize_procs(commands)
+	evaluate_expressions(commands, procs_end)
 
-	for element in commands:
+	for element in commands[procs_end:]:
+		print(element)
 		element = element.split()
+		if element == []:
+			continue    					#Blank Line
 		command_type = element[0]
-		switcher[command_type](element)
+		if command_type == 'in':
+			switcher[command_type](element)
+		else:
+			print("Executing Procedure : ", command_type)
+			for index, argument in enumerate(element[1:]):
+				if not argument.isdigit():
+					var_name = "$" + argument
+					element[index + 1] = str(global_vars[var_name])
+			script_procedures[command_type].execute(element[1:])
+
 
 def draw_sphere(primitive_name, arguments):
 	center = [float(x) for x in arguments[:3]]
