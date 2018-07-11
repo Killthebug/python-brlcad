@@ -2,21 +2,15 @@
 This is the python version of sgi.sh using the python-brlcad module.
 
 usage:
-
     python sgi.py sgi.g
-
-    To Render : 
-
+To Render : 
     rtedge -s 1024 -F output.pix sgi.g cube.r
     pix-png -s 1024 < output.pix > output.png
 """
 
 import sys
-
 from brlcad.primitives import union
-
 from draw_primitive import *
-
 import brlcad.wdb as wdb
 
 def right(a, b, rcc_name, sph_name):
@@ -64,15 +58,11 @@ def down(a, b, rcc_name, sph_name):
 if __name__ == "__main__":
     argv = sys.argv
     database_name = argv[1]
-    
     # cube dimensions
     i, j, radius = 1000, 800, 100
-
     # starting position
     x, y, z = 0, 0, 0
-    
     brl_db = wdb.WDB(database_name, "SGI.g")
-
     rcc_name_list, sph_name_list, union_list = [], [], []
 
     for iterator in range (100, 118):
@@ -80,8 +70,6 @@ if __name__ == "__main__":
         rcc_name_list.append(rcc_name)
         sph_name_list.append(sph_name)
         union_list.extend((rcc_name, sph_name))
-
-    print(rcc_name_list)
 
     forward(100, i, rcc_name_list[0], sph_name_list[0])
     left(101, j, rcc_name_list[1], sph_name_list[1])
