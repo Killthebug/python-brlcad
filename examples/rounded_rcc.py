@@ -1,11 +1,5 @@
 """
-This is the python version of sgi.sh using the python-brlcad module.
-
-usage:
-    python sgi.py sgi.g
-To Render : 
-    rtedge -s 1024 -F output.pix sgi.g cube.r
-    pix-png -s 1024 < output.pix > output.png
+Run : python rounded_rcc.py <<db>>.g
 """
 
 import sys
