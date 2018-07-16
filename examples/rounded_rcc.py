@@ -7,7 +7,16 @@ from brlcad.primitives import union
 from draw_primitive import *
 import brlcad.wdb as wdb
 
+def sanity_check(c_radius, c_length, rounding_radius):
+    if rounding_radius > c_radius/2:
+        raise ValueError("Rounding Radius cannot be larger than 0.5 * Cylinder Radius")
+        exit()
+    if rounding_radius > c_length/2:
+        raise ValueError("Rounding Radius cannot be larger than 0.5 * Cylinder Height")
+        exit()
+
 def rounder_rcc(c_radius, c_length, rounding_radius):
+    sanity_check(c_radius, c_length, rounding_radius)
     origin = (0, 0, 0)
     base   = (0, 0, rounding_radius)
     filler = (0, 0, c_length)
@@ -20,7 +29,7 @@ def rounder_rcc(c_radius, c_length, rounding_radius):
     brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
     union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
     brl_db.combination(
-        "cube.r",
+        "cylinder3.r",
         is_region=False,
         tree=union(union_list)
     )
@@ -31,4 +40,4 @@ if __name__ == "__main__":
     union_list = []
     database_name = argv[1]
     brl_db = wdb.WDB(database_name, "fml.g")
-    rounder_rcc(40, 100, 10)
+    rounder_rcc(40, 100, 21)
