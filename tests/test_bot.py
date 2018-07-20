@@ -1,7 +1,7 @@
 import os
 import unittest
 from brlcad.primitives import bot
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 
 
 class BOTTestCase(unittest.TestCase):
@@ -15,10 +15,10 @@ class BOTTestCase(unittest.TestCase):
         # create the test DB:
         if os.path.isfile(cls.TEST_FILE_NAME):
             os.remove(cls.TEST_FILE_NAME)
-        with wdb.WDB(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
+        with geometry.Database(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
             brl_db.bot("bot.s")
         # load the DB and cache it in a class variable:
-        cls.brl_db = wdb.WDB(cls.TEST_FILE_NAME)
+        cls.brl_db = geometry.Database(cls.TEST_FILE_NAME)
 
     @classmethod
     def tearDownClass(cls):

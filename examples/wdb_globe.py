@@ -15,7 +15,7 @@ python attribution:
 """
 
 import argparse
-import brlcad.wdb as wdb
+from brlcad.geometry import Database
 from brlcad.primitives import subtract, union
 
 

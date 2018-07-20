@@ -2,7 +2,7 @@
 3D Hilbert space filling curve with pipes.
 """
 from brlcad.vmath import Vector
-import brlcad.wdb as wdb
+from brlcad.geometry import Database
 import sys
 
 

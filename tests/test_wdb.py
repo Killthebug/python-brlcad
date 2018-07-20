@@ -4,7 +4,7 @@ import unittest
 from brlcad.vmath import Vector, Transform
 import numpy as np
 import brlcad._bindings.libwdb as libwdb
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 import brlcad.ctypes_adaptors as cta
 import brlcad.primitives as primitives
 
@@ -16,7 +16,7 @@ class WDBTestCase(unittest.TestCase):
         # create the test DB:
         if os.path.isfile("test_defaults.g"):
             os.remove("test_defaults.g")
-        with wdb.WDB("test_defaults.g", "BRL-CAD geometry for testing wdb defaults") as brl_db:
+        with Database("test_defaults.g", "BRL-CAD geometry for testing wdb defaults") as brl_db:
             brl_db.sphere("sphere.s")
             brl_db.rpp("rpp.s")
             brl_db.wedge("wedge.s")
@@ -58,7 +58,7 @@ class WDBTestCase(unittest.TestCase):
                 test_comb.tree.add_child(shape_name)
             brl_db.save(test_comb)
         # load the DB and cache it in a class variable:
-        cls.brl_db = wdb.WDB("test_defaults.g")
+        cls.brl_db = geometry.Database("test_defaults.g")
 
     @classmethod
     def tearDownClass(cls):
@@ -313,10 +313,10 @@ class WDBTestCase(unittest.TestCase):
         if os.path.isfile(db_name):
             os.remove(db_name)
         # first time the DB is created:
-        with wdb.WDB(db_name) as empty_db:
+        with Database(db_name) as empty_db:
             self.check_empty_db(empty_db)
         # second time the DB exists and it is re-opened:
-        with wdb.WDB(db_name) as empty_db:
+        with Database(db_name) as empty_db:
             self.check_empty_db(empty_db)
 
 

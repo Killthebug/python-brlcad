@@ -3,7 +3,7 @@ import unittest
 import math
 from brlcad.primitives import Sketch
 
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 
 
 class SketchTestCase(unittest.TestCase):
@@ -17,10 +17,10 @@ class SketchTestCase(unittest.TestCase):
         # create the test DB:
         if os.path.isfile(cls.TEST_FILE_NAME):
             os.remove(cls.TEST_FILE_NAME)
-        with wdb.WDB(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
+        with Database(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
             brl_db.sketch("sketch.s")
         # load the DB and cache it in a class variable:
-        cls.brl_db = wdb.WDB(cls.TEST_FILE_NAME)
+        cls.brl_db = geometry.Database(cls.TEST_FILE_NAME)
 
     @classmethod
     def tearDownClass(cls):

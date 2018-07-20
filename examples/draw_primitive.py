@@ -2,7 +2,7 @@ import sys
 
 from brlcad.primitives import union
 
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 
 def draw_sphere(primitive_name, arguments, brl_db):
 	center = [float(x) for x in arguments[:3]]

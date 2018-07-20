@@ -11,7 +11,7 @@ To Render :
 import sys
 from brlcad.primitives import union
 from draw_primitive import *
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 
 def right(a, b, rcc_name, sph_name):
     global x
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     i, j, radius = 1000, 800, 100
     # starting position
     x, y, z = 0, 0, 0
-    brl_db = wdb.WDB(database_name, "SGI.g")
+    brl_db = geometry.Database(database_name, "SGI.g")
     forward_list, back_list = [100, 107, 114], [105, 109, 116]
     up_list, down_list      = [104, 111, 115], [102, 106, 113]
     right_list, left_list   = [103, 110, 117], [101, 108, 112]

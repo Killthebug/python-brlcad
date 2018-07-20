@@ -30,10 +30,10 @@ import sys
 
 from brlcad.primitives import union
 
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 
 def main(argv):
-    with wdb.WDB(argv[1], "My Database") as brl_db:
+    with geometry.Database(argv[1], "My Database") as brl_db:
 
         # All units in the database file are stored in millimeters. This constrains
         # the arguments to the mk_* routines to also be in millimeters.

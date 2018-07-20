@@ -5,7 +5,7 @@ Run : python rounded_rcc.py <<db>>.g
 import sys
 from brlcad.primitives import union
 from draw_primitive import *
-import brlcad.wdb as wdb
+from brlcad.geometry import Database
 
 class rounded_rcc():
     def __init__(self, brl_db, inmem):
@@ -48,6 +48,6 @@ if __name__ == "__main__":
     argv = sys.argv
     union_list = []
     database_name = argv[1]
-    brl_db = wdb.WDB(database_name, "fml.g")
+    brl_db = Database(database_name, "fml.g")
     myObject = rounded_rcc(brl_db)
     myObject.create(50, 220, 21)

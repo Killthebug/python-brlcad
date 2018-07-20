@@ -2,7 +2,7 @@
 Fractal pipes :-)
 """
 from brlcad.vmath import Vector
-import brlcad.wdb as wdb
+from brlcad.geometry import Database
 import sys
 
 

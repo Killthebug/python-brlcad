@@ -1,5 +1,5 @@
 from brlcad.vmath import Transform
-import brlcad.wdb as wdb
+from brlcad.geometry import Database
 from brlcad import primitives
 
 if __name__ == "__main__":

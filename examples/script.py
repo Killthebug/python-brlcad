@@ -30,7 +30,7 @@ import argparse
 import errno
 import sys
 import os
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 from proc_interpreter import Procedure
 from arithematic_parser import *
 from brlcad.primitives import *
@@ -566,6 +566,6 @@ if __name__ == "__main__":
 	database_name = ' '.join(commands[0].split()[1:])
 	units = commands[1].split()[1]
 	commands = commands[2:]
-	brl_db = wdb.WDB(database_name, "db.g")
+	brl_db = geometry.Database(database_name, "db.g")
 	parse_script(database_name, units, commands)
 
