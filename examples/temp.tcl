@@ -1,3 +1,5 @@
 title db.g
 units mm
-in planes.s arbn 0 0 -1 -8 0 0 1 9 -1 0 0 0.5 1 0 0 0.5 0 -1 0 0.5 0 1 0 0.5
+set i 1
+set j 5
+in ball.s sph $i 2 $j [exp{$j - $i}] [exp{$i - $j}]

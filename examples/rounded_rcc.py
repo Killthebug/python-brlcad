@@ -5,7 +5,7 @@ Run : python rounded_rcc.py <<db>>.g
 import sys
 from brlcad.primitives import union
 from draw_primitive import *
-import brlcad.wdb as wdb
+import brlcad.geometry as geometry
 
 def sanity_check(c_radius, c_length, rounding_radius):
     if rounding_radius > c_radius/2:
@@ -39,5 +39,5 @@ if __name__ == "__main__":
     argv = sys.argv
     union_list = []
     database_name = argv[1]
-    brl_db = wdb.WDB(database_name, "fml.g")
-    rounder_rcc(40, 100, 21)
+    brl_db = geometry.Database(database_name, "fml.g")
+    rounder_rcc(40, 100, 19)
