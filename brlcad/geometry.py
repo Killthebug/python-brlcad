@@ -55,7 +55,7 @@ def mk_wrap_primitive(primitive_class):
     return wrapper_func
 
 
-class WDB:
+class Database:
     """
     Object to open or create a BRLCad data base file and read/write/modify it.
     """
@@ -69,7 +69,7 @@ class WDB:
                     raise BRLCADException("Can't open existing DB file: <{0}>".format(db_file))
                 if libwdb.db_dirbuild(self.db_ip) < 0:
                     raise BRLCADException("Failed loading directory of DB file: <{}>".format(db_file))
-                self.db_fp = libwdb.wdb_dbopen(self.db_ip, libwdb.RT_WDB_TYPE_DB_DISK)
+                self.db_fp = libwdb.wdb_dbopen(self.db_ip, libwdb._RT_WDB_TYPE_DB_INMEM)
                 if self.db_fp == libwdb.RT_WDB_NULL:
                     raise BRLCADException("Failed read existing DB file: <{}>".format(db_file))
             if not self.db_fp:
