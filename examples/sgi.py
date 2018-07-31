@@ -8,9 +8,7 @@ To Render :
     pix-png -s 1024 < output.pix > output.png
 """
 
-import sys
-from brlcad.primitives import union
-from draw_primitive import *
+from brlcad.procedural import *
 import brlcad.geometry as geometry
 
 def right(a, b, rcc_name, sph_name):

@@ -4,7 +4,7 @@ Run : python rounded_rcc.py <<db>>.g
 
 import sys
 from brlcad.primitives import union
-from draw_primitive import *
+from brlcad.procedural import *
 import brlcad.geometry as geometry
 
 def sanity_check(c_radius, c_length, rounding_radius):
