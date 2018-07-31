@@ -135,6 +135,8 @@ def main():
                 0.55, 4.45, 6.0125, 0.1, 0, 0.45,
                 0.55, 4, 6.05, 0.1, 0, 0.45], brl_db)
 
+	draw_half('half.s', [0, 1, 0, 0], brl_db)
+
 	return
 
 if __name__ == '__main__':

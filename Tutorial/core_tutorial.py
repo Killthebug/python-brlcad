@@ -169,6 +169,13 @@ if __name__ == "__main__":
                 [(0.55, 4, 6.05), 0.1, 0, 0.45],
             ]
         )
+
+        brl_db.half(
+            "half.s",
+            norm = (0, 0, 1), 
+            d = -1
+        )
+        
         brl_db.region(
             name="all.r",
             tree=(
@@ -199,7 +206,3 @@ if __name__ == "__main__":
             shader="plastic {di .8 sp .2}",
             rgb_color=(64, 180, 96)
         )
-
-    with Database("test_wdb.g") as brl_db:
-        for x in brl_db.ls():
-            print brl_db.lookup(x)
