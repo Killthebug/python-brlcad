@@ -206,6 +206,12 @@ if __name__ == "__main__":
             y_dim = 350,
             tallness = 20)
 
+        brl_db.submodel(
+            "submodel.s",
+            file_name = "db.g",
+            treetop = "arb4.s",
+            )
+
         brl_db.superell(
             "superell.s",
             center = (0, 5.5, 3),
