@@ -199,6 +199,13 @@ if __name__ == "__main__":
             magnitude = 3,
         )
 
+        brl_db.ebm(
+            "text1.s",
+            file_name = "ychar.bw",
+            x_dim = 350,
+            y_dim = 350,
+            tallness = 20)
+
         brl_db.superell(
             "superell.s",
             center = (0, 5.5, 3),
