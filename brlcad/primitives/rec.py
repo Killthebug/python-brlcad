@@ -1,5 +1,5 @@
 """
-Python wrappers for the REC primtive of BRL-CAD.
+Python wrappers for the REC & RPC primtive of BRL-CAD.
 """
 
 from base import Primitive

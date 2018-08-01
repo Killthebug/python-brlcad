@@ -6,7 +6,7 @@ if __name__ == "__main__":
     with Database("test_wdb.g", "Test BRLCAD DB file") as brl_db:
         brl_db.sphere(
             "sph1.s",
-            center=(1, 2, 3),
+            center=(0.5, 5, 8),
             radius=0.75
         )
         brl_db.rpp(
@@ -169,16 +169,69 @@ if __name__ == "__main__":
                 [(0.55, 4, 6.05), 0.1, 0, 0.45],
             ]
         )
+        
+        '''
+        To Complete : 
+        brl_db.ars(
+            "ars.s", 
+            curves=[]
+        )
+        '''
 
+        brl_db.bot(
+            "bot.s",
+            mode = 3,
+            orientation = 1,
+            flags = 0,
+            vertices = [(0, 5, 5), (0, 5, 6), (0, 6, 5), (1, 5, 5)],
+            faces = [(0, 1, 2), (1, 2, 3), (3, 1, 0)],
+            thickness=[2, 3, 1],
+            face_mode=[True, True, False]
+        )
+
+        '''
+        grip is created but unable to render
+        '''
+        brl_db.grip(
+            "grip.s",
+            center = (0, 5, 1),
+            normal = (1, 0, 0),
+            magnitude = 3,
+        )
+
+        brl_db.superell(
+            "superell.s",
+            center = (0, 5.5, 3),
+            a = (1, 0, 0),
+            b = (0, 1, 0),
+            c = (0, 0, 1),
+            n = 0,
+            e = 0
+        )
+
+        '''
+        Error : ctypes.ArgumentError: argument 6: <type 'exceptions.TypeError'>: expected LP_c_double_Array_5 instance instead of LP_c_double_Array_5
+
+        brl_db.metaball(
+            "metaball.s",      
+            points=[[(1, 1, 1), 1, 0], [(0, 0, 1), 2, 0]],
+            threshold=1, 
+            method=2, 
+        )
+        '''
+
+        '''
         brl_db.half(
             "half.s",
             norm = (0, 0, 1), 
             d = -1
         )
-        
+        '''
+
         brl_db.region(
             name="all.r",
             tree=(
+                "bot.s",
                 "sph1.s",
                 "box1.s",
                 "wedge1.s",
