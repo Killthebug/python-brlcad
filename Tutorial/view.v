@@ -13,3 +13,18 @@ start 0; clean;
 end;
 
 EOF
+#!/bin/sh
+rt -M \
+ -o view.v.pix\
+ $*\
+ '/Users/Troller/Documents/GSoC/brlcad/python-brlcad/Tutorial/scene.g'\
+ 'arb4.s' 'arb5.s' 'arb6.s' 'arb7.s' 'arb8.s' 'rhc2.s' \
+ 2>> view.v.log\
+ <<EOF
+viewsize 1.18778504000000e+02;
+orientation 4.37938103845327e-01 2.73399687913068e-01 4.12746763261468e-01 7.50401850521824e-01;
+eye_pt 6.89792294712336e+01 -5.49783880251629e+01 3.55482788295733e+01;
+start 0; clean;
+end;
+
+EOF
