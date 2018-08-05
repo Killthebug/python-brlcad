@@ -3,7 +3,8 @@ from brlcad.geometry import Database
 from brlcad import primitives
 
 if __name__ == "__main__":
-    with Database("test_wdb.g", "Test BRLCAD DB file") as brl_db:
+    with Database("scene.g", "Test BRLCAD DB file") as brl_db:
+        '''
         brl_db.sphere(
             "sph1.s",
             center=(0.5, 5, 8),
@@ -22,30 +23,79 @@ if __name__ == "__main__":
             x_len=4, y_len=2, z_len=1,
             x_top_len=3
         )
+        '''
         brl_db.arb4(
             "arb4.s",
-            points=[(-1, -5, 3), (1, -5, 3), (1, -3, 4), (0, -4, 5)]
+            points=[(-10, -8, 0), (-6, -10, 0), (-6, -6, 0), (-8, -8, 6)]
         )
         brl_db.arb5(
             "arb5.s",
-            points=[(-1, -5, 0), (1, -5, 0), (1, -3, 0), (-1, -3, 0), (0, -4, 3)]
+            points=[(-10, -20, 0), (-6, -20, 0), (-6, -16, 0), (-10, -16, 0), (-8, -18, 6)]
         )
         brl_db.arb6(
             "arb6.s",
-            points=[(-1, -2.5, 0), (1, -2.5, 0), (1, -0.5, 0), (-1, -0.5, 0), (0, -2.5, 2.5), (0, -0.5, 2.5)]
+            points=[(-10, -30, 0), (-6, -30, 0), (-6, -26, 0), (-10, -26, 0), (-8, -30, 6), (-8, -26, 6)]
         )
         brl_db.arb7(
             "arb7.s",
-            points=[(-1, -2.5, 3), (1, -2.5, 3), (1, -0.5, 3), (-1, -1.5, 3), (-1, -2.5, 5), (1, -2.5, 5), (1, -1.5, 5)]
+            points=[(-10, -40, 0), (-6, -40, 0), (-6, -36, 0), (-10, -36, 0), (-9, -38, 6), (-7, -40, 6), (-7, -36, 6)]
         )
         brl_db.arb8(
             "arb8.s",
             points=[
-                (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
-                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
+                (-10, -50, 0), (-6, -50, 0), (-6, -46, 0), (-10, -46, 0),
+                (-9, -49, 6), (-7, -49, 6), (-7, -47, 6), (-9, -47, 6)
             ]
         )
+
+        brl_db.arbn(
+            "arbn.s",
+            planes=[
+                [(0, 0, -1), -10],
+                [(0, 0, 1), 11],
+                [(-1, 0, 0), 0.5],
+                [(1, 0, 0), 0.5],
+                [(0, -1, 0), 0.5],
+                [(0, 1, 0), 0.5],
+            ]
+        )
+
+        brl_db.rhc('rhc.s', 
+                base = (6, -6, 0),
+                height = (0, 0, 1),
+                breadth = (0.4, 0.4, 0),
+                half_width = 3,
+                asymptote = 0.1
+        )
+
+        brl_db.rhc('rhc2.s', 
+                base = (2, -9, 0),
+                height = (0, 0, 3),
+                breadth =  (1, 0, 0),
+                half_width = 3,
+                asymptote = 0.1
+        )
+
+        brl_db.rhc('rhc3.s', 
+                base = (2, -14.5, 0),
+                height = (0, 1, 0),
+                breadth = (0.9, 0, 3),
+                half_width = 1, 
+                asymptote = 0.5
+        )
+
+        brl_db.rhc('rhc4.s', 
+                base = (2, -21.5, 0),
+                height = (0, 0, 1),
+                breadth = (1, 0, 0),
+                half_width = 3.5, 
+                asymptote = 3
+        )
+
+        '''
         brl_db.ellipsoid(
+        (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
+                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
             "ellipsoid.s",
             center=(0, -4, 6),
             a=(0.75, 0, 0),
@@ -136,17 +186,7 @@ if __name__ == "__main__":
             r_revolution=1,
             r_minor=0.25
         )
-        brl_db.arbn(
-            "arbn.s",
-            planes=[
-                [(0, 0, -1), -8],
-                [(0, 0, 1), 9],
-                [(-1, 0, 0), 0.5],
-                [(1, 0, 0), 0.5],
-                [(0, -1, 0), 0.5],
-                [(0, 1, 0), 0.5],
-            ]
-        )
+
         brl_db.particle(
             "particle.s",
             base=(0, -5, 8.5),
@@ -169,6 +209,7 @@ if __name__ == "__main__":
                 [(0.55, 4, 6.05), 0.1, 0, 0.45],
             ]
         )
+        '''
         
         '''
         To Complete : 
@@ -177,7 +218,7 @@ if __name__ == "__main__":
             curves=[]
         )
         '''
-
+        '''
         brl_db.bot(
             "bot.s",
             mode = 3,
@@ -188,9 +229,12 @@ if __name__ == "__main__":
             thickness=[2, 3, 1],
             face_mode=[True, True, False]
         )
+        '''
 
         '''
         grip is created but unable to render
+        '''
+
         '''
         brl_db.grip(
             "grip.s",
@@ -229,6 +273,7 @@ if __name__ == "__main__":
             n = 0,
             e = 0
         )
+        '''
 
         '''
         Error : ctypes.ArgumentError: argument 6: <type 'exceptions.TypeError'>: expected LP_c_double_Array_5 instance instead of LP_c_double_Array_5
@@ -247,6 +292,8 @@ if __name__ == "__main__":
             norm = (0, 0, 1), 
             d = -1
         )
+        '''
+
         '''
 
         brl_db.region(
@@ -280,3 +327,4 @@ if __name__ == "__main__":
             shader="plastic {di .8 sp .2}",
             rgb_color=(64, 180, 96)
         )
+        '''
