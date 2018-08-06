@@ -117,7 +117,7 @@ if __name__ == "__main__":
             d=(0, 1, 0)
         )
         '''
-        Hack for tec
+        TEC is a special case of TGC
         '''
         brl_db.tgc(
             "tec.s",
@@ -130,132 +130,99 @@ if __name__ == "__main__":
         )
 
         '''
-        brl_db.ellipsoid(
-        (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
-                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
-            "ellipsoid.s",
-            center=(0, -4, 6),
-            a=(0.75, 0, 0),
-            b=(0, 1, 0),
-            c=(0, 0, 0.5)
-        )
-        brl_db.torus(
-            "torus.s",
-            center=(0, -2, 6),
-            n=(0, 0, 1),
-            r_revolution=1,
-            r_cross=0.25
-        )
-        brl_db.rcc(
-            "rcc.s",
-            base=(1, 2, 5),
-            height=(0, 0, 1),
-            radius=1
-        )
+        REC is a special case of TGC
+        '''
         brl_db.tgc(
-            "tgc.s",
-            base=(0, -5, 7),
-            height=(0, 0, 1),
-            a=(0.5, 0, 0),
-            b=(0, 1, 0),
+            'rec.s',
+            base=(40, -17.5, 0),
+            height=(0, 0, 6),
+            a=(1, 0, 0),
+            b=(0, 2, 0),
             c=(1, 0, 0),
-            d=(0, 0.5, 0)
-        )
-        brl_db.cone(
-            "cone.s",
-            base=(0, -2, 7),
-            n=(0, 0, 2),
-            h=0.5,
-            r_base=1.25,
-            r_top=0.75
-        )
+            d=(0, 2, 0)
+            )
+
         brl_db.trc(
             "trc.s",
-            base=(0, -2, 7.5),
-            height=(0, 0, 0.5),
-            r_base=0.75,
-            r_top=1.25
-        )
-        brl_db.rpc(
-            "rpc.s",
-            base=(0, -2, 8.5),
-            height=(0, 0, 0.5),
-            breadth=(0.25, 0.25, 0),
-            half_width=0.75
-        )
-        brl_db.rhc(
-            "rhc.s",
-            base=(0, -2, 9),
-            height=(0, 0, 0.5),
-            breadth=(0.25, 0.25, 0),
-            half_width=0.75,
-            asymptote=0.1
-        )
-        brl_db.epa(
-            "epa.s",
-            base=(1, 2, 7),
-            height=(0, 0, -1),
-            n_major=(1, 0, 0),
-            r_major=1,
-            r_minor=0.5
-        )
-        brl_db.ehy(
-            "ehy.s",
-            base=(1, 2, 7),
-            height=(0, 0, 1),
-            n_major=(1, 0, 0),
-            r_major=1, r_minor=0.5,
-            asymptote=0.1
-        )
-        brl_db.hyperboloid(
-            "hyperboloid.s",
-            base=(0, 0, 6.75),
-            height=(0, 0, 0.75),
-            a_vec=(1, 0, 0),
-            b_mag=0.5,
-            base_neck_ratio=0.3
-        )
-        brl_db.eto(
-            "eto.s",
-            center=(1, 2, 8.5),
-            n=(0, 0, 1),
-            s_major=(0.5, 0, 0.5),
-            r_revolution=1,
-            r_minor=0.25
+            base=(40, -8.5, 0),
+            height=(0, 0, 6),
+            r_base=1.25,
+            r_top=2.5
         )
 
-        brl_db.particle(
-            "particle.s",
-            base=(0, -5, 8.5),
-            height=(0, 0, 0.75),
-            r_base=0.25,
-            r_end=0.5
+        brl_db.sphere(
+            "sph1.s",
+            center = (65, -47.5, 2.5),
+            radius = 3
         )
+
+        brl_db.ellipsoid(
+            "ellipsoid.s",
+            center=(65, -37.5, 2.5),
+            a=(3, 0, 0),
+            b=(0, 3, 0),
+            c=(0, 0, 2)
+        )
+
+        brl_db.ellipsoid(
+            "ellipsoid2.s",
+            center=(65, -27.5, 2.5),
+            a=(2, 0, 0),
+            b=(0, 2, 0),
+            c=(0, 0, 3)
+        )
+
+        brl_db.torus(
+            "torus.s",
+            center=(65, -17.5, 2.5),
+            n=(0, 0, 1),
+            r_revolution=2.25,
+            r_cross=1
+        )
+
+        brl_db.eto(
+            "eto.s",
+            center=(65, -8.5, 2.5),
+            n=(0, 0, 1),
+            s_major=(1, 0, 1),
+            r_revolution=2.25,
+            r_minor=0.50
+        )
+
+        brl_db.cone(
+            "cone.s",
+            base=(90, -47.5, 0),
+            n=(0, 0, 1),
+            h=6,
+            r_base=2.5,
+            r_top=0
+        )
+
+        brl_db.hyperboloid(
+            "hyperboloid.s",
+            base=(90, -37.5, 0),
+            height=(0, 0, 6),
+            a_vec=(1.5, 1, 0),
+            b_mag=1,
+            base_neck_ratio=0.3
+        )
+
         brl_db.pipe(
             "pipe.s",
             points=[
-                [(0.55, 4, 5.45), 0.1, 0, 0.45],
-                [(0.55, 3.55, 5.4875), 0.1, 0, 0.45],
-                [(1.45, 3.55, 5.5625), 0.1, 0, 0.45],
-                [(1.45, 4.45, 5.6375), 0.1, 0, 0.45],
-                [(0.55, 4.45, 5.7125), 0.1, 0, 0.45],
-                [(0.55, 3.55, 5.7875), 0.1, 0, 0.45],
-                [(1.45, 3.55, 5.8625), 0.1, 0, 0.45],
-                [(1.45, 4.45, 5.9375), 0.1, 0, 0.45],
-                [(0.55, 4.45, 6.0125), 0.1, 0, 0.45],
-                [(0.55, 4, 6.05), 0.1, 0, 0.45],
+                [(87.4337, -28.1268, 1.01347), 0.604139, 0, 2.71863],
+                [(87.4547, -30.8446, 1.24826), 0.604139, 0, 2.71863],
+                [(92.8908, -30.8003, 1.71279), 0.604139, 0, 2.71863],
+                [(92.8468, -25.3618, 2.14942), 0.604139, 0, 2.71863],
+                [(87.4088, -25.4035, 2.59109), 0.604139, 0, 2.71863],
+                [(87.4508, -30.8392, 3.06066), 0.604139, 0, 2.71863],
+                [(92.8869, -30.7948, 3.5252), 0.604139, 0, 2.71863],
+                [(92.843, -25.3564, 3.96183), 0.604139, 0, 2.71863],
+                [(87.4049, -25.398, 4.4035), 0.604139, 0, 2.71863],
+                [(87.4259, -28.1159, 4.63828), 0.604139, 0, 2.71863],
             ]
         )
-        '''
-        
-        '''
-        To Complete : 
-        brl_db.ars(
-            "ars.s", 
-            curves=[]
-        )
-        '''
-        '''
+
         brl_db.bot(
             "bot.s",
             mode = 3,
@@ -266,19 +233,8 @@ if __name__ == "__main__":
             thickness=[2, 3, 1],
             face_mode=[True, True, False]
         )
+        
         '''
-
-        '''
-        grip is created but unable to render
-        '''
-
-        '''
-        brl_db.grip(
-            "grip.s",
-            center = (0, 5, 1),
-            normal = (1, 0, 0),
-            magnitude = 3,
-        )
 
         brl_db.ebm(
             "text1.s",
@@ -301,15 +257,6 @@ if __name__ == "__main__":
             vertices = ((0,0), (1, 0), (0, 1), (1,1))
             )
 
-        brl_db.superell(
-            "superell.s",
-            center = (0, 5.5, 3),
-            a = (1, 0, 0),
-            b = (0, 1, 0),
-            c = (0, 0, 1),
-            n = 0,
-            e = 0
-        )
         '''
 
         '''
@@ -328,40 +275,5 @@ if __name__ == "__main__":
             "half.s",
             norm = (0, 0, 1), 
             d = -1
-        )
-        '''
-
-        '''
-
-        brl_db.region(
-            name="all.r",
-            tree=(
-                "bot.s",
-                "sph1.s",
-                "box1.s",
-                "wedge1.s",
-                "arb4.s",
-                "arb5.s",
-                "arb6.s",
-                "arb7.s",
-                "arb8.s",
-                "ellipsoid.s",
-                "torus.s",
-                "rcc.s",
-                "tgc.s",
-                "cone.s",
-                "trc.s",
-                "rpc.s",
-                "rhc.s",
-                "epa.s",
-                "ehy.s",
-                "hyperboloid.s",
-                "eto.s",
-                primitives.leaf("arbn.s", Transform.translation(1, 0, 0)),
-                "particle.s",
-                "pipe.s",
-            ),
-            shader="plastic {di .8 sp .2}",
-            rgb_color=(64, 180, 96)
         )
         '''
