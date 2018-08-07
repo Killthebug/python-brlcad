@@ -189,9 +189,6 @@ if __name__ == "__main__":
             face_mode=[True, True, False]
         )
 
-        '''
-        grip is created but unable to render
-        '''
         brl_db.grip(
             "grip.s",
             center = (0, 5, 1),
@@ -241,13 +238,11 @@ if __name__ == "__main__":
         )
         '''
 
-        '''
         brl_db.half(
             "half.s",
             norm = (0, 0, 1), 
             d = -1
         )
-        '''
 
         brl_db.region(
             name="all.r",
