@@ -397,6 +397,7 @@ class Sketch(Primitive, collections.MutableSequence):
                 raise ValueError("Invalid vertex index: {}".format(value))
             return value
         value = Vector(value, copy=copy)
+        print(value)
         if len(value) != 2:
             raise ValueError("Sketches need 2D vertexes, but got: {}".format(value))
         for i in xrange(0, vertex_count):
@@ -406,8 +407,13 @@ class Sketch(Primitive, collections.MutableSequence):
         return vertex_count
 
     def _parse_curve_segment(self, *args, **kwargs):
+        print(args)
+        args = args[0]
+        print(args)
+        print(len(args))
         index = kwargs.get("index")
         if len(args) == 1 and isinstance(args[0], Curve):
+            print("here")
             # if the curve is part of another sketch, or the curve is
             # already there on a different index, we need to copy it
             copy_needed = args[0].sketch != self
@@ -421,7 +427,7 @@ class Sketch(Primitive, collections.MutableSequence):
         elif len(args) == 2:
             curve_type = Curve.TYPE_MAP[args[0]]
             if curve_type:
-                return curve_type(self, args[1], **kwargs)
+                return curve_type(self, args[1])
         elif len(args) == 1 and isinstance(args[0], dict):
             kwargs.update(args[0])
             curve_type = kwargs.get("curve_type")
@@ -463,14 +469,14 @@ class Sketch(Primitive, collections.MutableSequence):
         ci.count = len(self.curves)
         if ci.count:
             ci.reverse = (librt.c_int * ci.count)()
-            ci.segment = (librt.genptr_t * ci.count)()
+            ci.segment = (librt.c_void_p * ci.count)()
         else:
             ci.reverse = None
             ci.segment = None
         for i in xrange(0, ci.count):
-            curve = self.curves[i]
-            ci.reverse[i] = bool(curve.reverse)
-            ci.segment[i] = librt.cast(librt.pointer(curve.build_segment()), librt.c_void_p)
+            xx = Line(self, self.curves[i][1])
+            ci.reverse[i] = bool(xx.reverse)
+            ci.segment[i] = librt.cast(librt.pointer(xx.build_segment()), librt.c_void_p)
         return ci, self.vertices
 
     def update_params(self, params):

@@ -294,9 +294,10 @@ class Database:
                                                                                                 use_brlcad_malloc=True))
 
     @mk_wrap_primitive(primitives.Sketch)
-    def sketch(self, name, sketch=None):
-        if not sketch:
-            sketch = primitives.Sketch(name)
+    def sketch(self, name, sketch):
+        #if not sketch:
+        #    sketch = primitives.Sketch(name)
+        #    print("making new sketch")
         si = libwdb.struct_rt_sketch_internal()
         si.magic = libwdb.RT_SKETCH_INTERNAL_MAGIC
         si.V = cta.point(sketch.base)
