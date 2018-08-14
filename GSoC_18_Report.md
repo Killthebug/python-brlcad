@@ -39,3 +39,11 @@ Project : The project started off as finessing the exisiting python BRL-CAD arch
 <li>Patch : http://bit.ly/script_describe
 <li>Sourceforge Project : https://sourceforge.net/p/brlcad/code/HEAD/tree/brlcad/trunk/src/librt/primitives/script/
 </ul>
+  
+### Remaining Work
+<ol>
+  <li> Fix broken 2-d primitives : sketch, extrude and revolve.
+  <li> Couple script primitive with python brlcad.
+  <li> Introduce more examples for procedural geometry
+  <li> In-depth documentation (Maybe)
+<ol>
