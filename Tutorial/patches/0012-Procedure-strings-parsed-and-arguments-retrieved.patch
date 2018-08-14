@@ -1,0 +1,64 @@
+From 1e67221f8d25511e1e18ae521fda2b0c9700d98b Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Thu, 28 Jun 2018 11:46:09 +0530
+Subject: [PATCH 12/47] Procedure strings parsed and arguments retrieved
+
+---
+ examples/proc_interpreter.py | 5 +++--
+ examples/script.py           | 9 +++++++++
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index 2d899d3..812a07c 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -20,7 +20,7 @@ right 100 $i 					#Procedure call
+ -------------------------------------------------------------
+ 
+ Currently the proc_interpreter can
+-**
++** _do nothing_
+ **
+ **
+ **
+@@ -37,8 +37,9 @@ class Procudre():
+ 	Each unique procedure is an instance of this class
+ 	"""
+ 
+-	def __init__(self, proc_name, global_vars):
++	def __init__(self, proc_name, proc_args, global_vars):
+ 		self.name = proc_name
++		self.args = proc_args
+ 		self.global_vars = global_vars
+ 
+ 	def initialize(self):
+diff --git a/examples/script.py b/examples/script.py
+index abf327d..b80194b 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -75,6 +75,14 @@ def initalize_global_vars(commands):
+ 			switcher[command_type](element)
+ 	print(global_vars)				#debug
+ 
++def create_proc_objects(proc_list):
++	for element in proc_list:
++		temp_list = element.split("\n")[0]
++		proc_name = temp_list.split()[1]
++		proc_args = temp_list.split("{")[1].split('}')[0].split()
++		print(proc_args)											#debug
++		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars)
++
+ def parse_procs(commands, proc_line_position):
+ 	proc_list = []
+ 	print(proc_line_position)
+@@ -111,6 +119,7 @@ def initialize_procs(commands):
+ 			proc_line_position.append(iterator)
+ 
+ 	proc_list = parse_procs(commands, proc_line_position)
++	create_proc_objects(proc_list)
+ 
+ def parse_combination():
+ 	return
+-- 
+2.14.3 (Apple Git-98)
+

@@ -1,0 +1,29 @@
+From d94693149831af88f13ec620e548267fcbfab294 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 13 Jul 2018 03:19:44 +0530
+Subject: [PATCH 25/47] Minor change
+
+---
+ examples/rounded_rcc.py | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/examples/rounded_rcc.py b/examples/rounded_rcc.py
+index 0fc6a32..18ce5cd 100644
+--- a/examples/rounded_rcc.py
++++ b/examples/rounded_rcc.py
+@@ -1,11 +1,5 @@
+ """
+-This is the python version of sgi.sh using the python-brlcad module.
+-
+-usage:
+-    python sgi.py sgi.g
+-To Render : 
+-    rtedge -s 1024 -F output.pix sgi.g cube.r
+-    pix-png -s 1024 < output.pix > output.png
++Run : python rounded_rcc.py <<db>>.g
+ """
+ 
+ import sys
+-- 
+2.14.3 (Apple Git-98)
+

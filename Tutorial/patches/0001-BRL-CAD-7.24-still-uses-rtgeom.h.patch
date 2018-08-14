@@ -1,0 +1,24 @@
+From 8c67e6a17f00211f0a9d268b93e508ceb08e5f4f Mon Sep 17 00:00:00 2001
+From: Cezar El-Nazli <cezar.elnazli2@gmail.com>
+Date: Sat, 14 Apr 2018 12:05:16 +0300
+Subject: [PATCH 01/47] BRL-CAD 7.24 still uses rtgeom.h
+
+---
+ python-brlcad.cfg | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/python-brlcad.cfg b/python-brlcad.cfg
+index d20fed5..29ef31c 100644
+--- a/python-brlcad.cfg
++++ b/python-brlcad.cfg
+@@ -62,6 +62,7 @@ ged-dependencies: bu, bn, rt
+ #
+ min-brlcad-version: 7.24.0
+ max-brlcad-version: 7.24.0
++rt-lib-headers: raytrace.h, rtgeom.h, nurb.h
+ #
+ # if changed, the full list of library names must be repeated, and order is important:
+ #libraries: bu, bn, rt, wdb, ged, brep
+-- 
+2.14.3 (Apple Git-98)
+

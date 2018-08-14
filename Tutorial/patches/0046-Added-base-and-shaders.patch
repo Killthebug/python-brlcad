@@ -1,0 +1,331 @@
+From 1fae8e8fb1b010e424380eb2bf1a48a6f36a42c2 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 7 Aug 2018 11:21:11 +0530
+Subject: [PATCH 46/47] Added base and shaders
+
+---
+ Tutorial/scene.py | 174 ++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 90 insertions(+), 84 deletions(-)
+
+diff --git a/Tutorial/scene.py b/Tutorial/scene.py
+index 99a3f85..80856b7 100644
+--- a/Tutorial/scene.py
++++ b/Tutorial/scene.py
+@@ -242,6 +242,20 @@ if __name__ == "__main__":
+             x_top_len = 2
+             )
+ 
++        brl_db.arb8(
++            'base.s',
++            points = [
++                      (-90, -150, -2.5), (150, -150, -2.5), (150, 60, -2.5), (-90, 60, -2.5),
++                      (-90, -150, -1.2), (150, -150, -1.2), (150, 60, -1.2), (-90, 60, -1.1)]
++            )
++
++        brl_db.region(
++            "base.r",
++            region_id = 123,
++            tree = "base.s",
++            shader = "mirror {re 0.2}",
++            rgb_color = (0, 0, 0)
++        )
+ 
+         
+         '''
+@@ -258,217 +272,209 @@ if __name__ == "__main__":
+             'bot.r',
+             region_id = 1,
+             tree = 'bot.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(240,163,255)
+             )
+ 
+         brl_db.region(
+             'arb4.r',
+-            region_id = 1,
++            region_id = 2,
+             tree = 'arb4.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,117,220)
+             )
+ 
+         brl_db.region(
+             'arb5.r',
+-            region_id = 1,
++            region_id = 3,
+             tree = 'arb5.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(153,63,0)
+             )
+ 
+         brl_db.region(
+             'arb6.r',
+-            region_id = 1,
++            region_id = 4,
+             tree = 'arb6.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(76,0,92)
+             )
+ 
+         brl_db.region(
+             'arb7.r',
+-            region_id = 1,
++            region_id = 5,
+             tree = 'arb7.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255, 80, 5)
+             )
+ 
+         brl_db.region(
+             'arb8.r',
+-            region_id = 1,
++            region_id = 6,
+             tree = 'arb8.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,92,49)
+             )
+ 
+         brl_db.region(
+             'rhc.r',
+-            region_id = 1,
++            region_id = 7,
+             tree = 'rhc2.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(43,206,72)
+             )
+ 
+         brl_db.region(
+             'rpc.r',
+-            region_id = 1,
++            region_id = 7,
+             tree = 'rpc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,204,153)
+             )
+ 
+         brl_db.region(
+             'epa.r',
+-            region_id = 1,
++            region_id = 8,
+             tree = 'epa.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(128,128,128)
+             )
+ 
+         brl_db.region(
+             'ehy.r',
+-            region_id = 1,
++            region_id = 9,
+             tree = 'ehy.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(148,255,181)
+             )
+ 
+         brl_db.region(
+             'particle.r',
+-            region_id = 1,
++            region_id = 10,
+             tree = 'particle.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(143,124,0)
+             )
+ 
+         brl_db.region(
+             'rcc.r',
+-            region_id = 1,
++            region_id = 11,
+             tree = 'rcc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(157,204,0)
+             )
+ 
+         brl_db.region(
+             'tgc.r',
+-            region_id = 1,
++            region_id = 12,
+             tree = 'tgc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(194,0,136)
+             )
+ 
+         brl_db.region(
+             'tec.r',
+-            region_id = 1,
++            region_id = 13,
+             tree = 'tec.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,51,128)
+             )
+ 
+         brl_db.region(
+             'rec.r',
+-            region_id = 1,
++            region_id = 14,
+             tree = 'rec.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,164,5)
+             )
+ 
+         brl_db.region(
+             'trc.r',
+-            region_id = 1,
++            region_id = 15,
+             tree = 'trc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,168,187)
+             )
+ 
+         brl_db.region(
+             'sph.r',
+-            region_id = 1,
++            region_id = 16,
+             tree = 'sph1.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(66,102,0)
+             )
+ 
+         brl_db.region(
+             'ellipsoid.r',
+-            region_id = 1,
++            region_id = 17,
+             tree = 'ellipsoid.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,0,16)
+             )
+ 
+         brl_db.region(
+             'ellipsoid2.r',
+-            region_id = 1,
++            region_id = 18,
+             tree = 'ellipsoid2.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(94,241,242)
+             )
+ 
+ 
+         brl_db.region(
+             'torus.r',
+-            region_id = 1,
++            region_id = 19,
+             tree = 'torus.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,153,143)
+             )
+ 
+         brl_db.region(
+             'eto.r',
+-            region_id = 1,
++            region_id = 20,
+             tree = 'eto.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(224,255,102)
+             )
+ 
+         brl_db.region(
+             'cone.r',
+-            region_id = 1,
++            region_id = 21,
+             tree = 'cone.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(116,10,255)
+             )
+ 
+         brl_db.region(
+             'cone.r',
+-            region_id = 1,
++            region_id = 22,
+             tree = 'cone.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(153, 0, 0)
+             )
+ 
+         brl_db.region(
+             'hyperboloid.r',
+-            region_id = 1,
++            region_id = 23,
+             tree = 'hyperboloid.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255, 255, 128)
+             )
+ 
+         brl_db.region(
+             'pipe.r',
+-            region_id = 1,
++            region_id = 24,
+             tree = 'pipe.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255, 255, 0)
+             )
+ 
+ 
+-        brl_db.region(
+-            'bot.r',
+-            region_id = 1,
+-            tree = 'bot.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
+-            )
+-
+         brl_db.region(
+             'wedge.r',
+-            region_id = 1,
++            region_id = 25,
+             tree = 'wedge1.s',
+-            shader="plastic {di .8 sp .2}",
++            shader="plastic {di .9 sp .4}",
+             rgb_color=(255, 0, 96)
+             )
+         
+-- 
+2.14.3 (Apple Git-98)
+

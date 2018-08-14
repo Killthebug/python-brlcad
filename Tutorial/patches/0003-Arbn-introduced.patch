@@ -1,0 +1,37 @@
+From e7327bfc9f2bb16d764bbabed788f275ea9c0c6c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 11:44:06 +0530
+Subject: [PATCH 03/47] Arbn introduced
+
+---
+ examples/script.py | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/examples/script.py b/examples/script.py
+index 5bc0e4a..2a308ff 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -216,6 +216,20 @@ def draw_eto(primitive_name, arguments):
+ 	return
+ 
+ def draw_arbn(primitive_name, arguments):
++	plane_1 = [tuple([float(x) for x in arguments[:3]])]
++	plane_1.append(float(arguments[3]))
++	plane_2 = [tuple([float(x) for x in arguments[4:7]])]
++	plane_2.append(float(arguments[7]))
++	plane_3 = [tuple([float(x) for x in arguments[8:11]])]
++	plane_3.append(float(arguments[11]))
++	plane_4 = [tuple([float(x) for x in arguments[12:15]])]
++	plane_4.append(float(arguments[15]))
++	plane_5 = [tuple([float(x) for x in arguments[16:19]])]
++	plane_5.append(float(arguments[19]))
++	plane_6 = [tuple([float(x) for x in arguments[20:23]])]
++	plane_6.append(float(arguments[23]))
++	planes = [plane_1, plane_2, plane_3, plane_4, plane_5, plane_6]
++	brl_db.arbn(primitive_name, planes)
+ 	return
+ 
+ def draw_particle(primitive_name, arguments):
+-- 
+2.14.3 (Apple Git-98)
+

@@ -1,0 +1,4547 @@
+From dd63c441639ed624af62730b834016557876ced3 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 10 Jul 2018 15:19:15 +0530
+Subject: [PATCH 19/47] python equivalent of sgi.sh
+
+---
+ examples/sgi.py | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 125 insertions(+)
+ create mode 100644 examples/sgi.py
+
+diff --git a/examples/sgi.py b/examples/sgi.py
+new file mode 100644
+index 0000000..09915d7
+--- /dev/null
++++ b/examples/sgi.py
+@@ -0,0 +1,125 @@
++"""
++This is the python version of sgi.sh using the python-brlcad module.
++
++usage:
++
++    python sgi.py sgi.g
++
++    To Render : 
++
++    rtedge -s 1024 -F output.pix sgi.g cube.r
++    pix-png -s 1024 < output.pix > output.png
++"""
++
++import sys
++
++from brlcad.primitives import union
++
++import brlcad.wdb as wdb
++
++def right(a, b):
++    global x
++    old = x
++    x = old + b
++    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
++    name_tracker.extend((rcc_name, sph_name))
++    brl_db.rcc(rcc_name, base = (old, y, z), height = (x - old, 0, 0), radius = radius)
++    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++
++def left(a, b):
++    global x
++    old = x
++    x = old - b
++    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
++    name_tracker.extend((rcc_name, sph_name))
++    brl_db.rcc(rcc_name, base = (old, y, z), height = (x - old, 0, 0), radius = radius)
++    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++    return
++
++def forward(a, b):
++    global y
++    old = y
++    y = old + b
++    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
++    name_tracker.extend((rcc_name, sph_name))
++    brl_db.rcc(rcc_name, base = (x, old, z), height = (0, y - old, 0), radius = radius)
++    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++    return
++
++def back(a, b):
++    global y
++    old = y
++    y = old - b
++    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
++    name_tracker.extend((rcc_name, sph_name))
++    brl_db.rcc(rcc_name, base = (x, old, z), height = (0, y - old, 0), radius = radius)
++    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++    return
++
++def up(a, b):
++    global z
++    old = z
++    z = old + b
++    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
++    name_tracker.extend((rcc_name, sph_name))
++    brl_db.rcc(rcc_name, base = (x, y, old), height = (0, 0, z - old), radius = radius)
++    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++    return
++
++def down(a, b):
++    global z
++    old = z
++    z = old - b
++    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
++    name_tracker.extend((rcc_name, sph_name))
++    brl_db.rcc(rcc_name, base = (x, y, old), height = (0, 0, z - old), radius = radius)
++    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++    return
++
++if __name__ == "__main__":
++    argv = sys.argv
++    database_name = argv[1]
++    name_tracker = []
++    
++    # cube dimensions
++    i, j, radius = 1000, 800, 100
++
++    # starting position
++    x, y, z = 0, 0, 0
++    
++    brl_db = wdb.WDB(database_name, "SGI.g")
++
++    forward(100, i)
++    left(101, j)
++    down(102, i)
++    right(103, i)
++    up(104, j)
++    back(105, i)
++    down(106, i)
++    forward(107, i)
++    left(108, i)
++    back(109, i)
++    right(110, j)
++    up(111, i)
++    left(112, i)
++    down(113, j)
++    forward(114, i)
++    up(115, i)
++    back(116, j)
++    right(117, i)
++
++    print(name_tracker)
++
++    union_list = []
++
++    for element in name_tracker:
++        if "rcc" in element or "sph" in element:
++            union_list.append(element)
++
++    brl_db.combination(
++            "cube.r",
++            is_region=True,
++            tree=union(union_list),
++            shader="cook {re=.8 di=2 sp=1 ri=10}",
++            rgb_color=(250, 250, 250)
++        )
+-- 
+2.14.3 (Apple Git-98)
+
+
+From cab884d10bed0f8263f0e95557bb2768eac68ffd Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Wed, 11 Jul 2018 15:57:06 +0530
+Subject: [PATCH 20/47] Better Version?
+
+---
+ examples/draw_primitive.py | 236 +++++++++++++++++++++++++++++++++++++++++++++
+ examples/sgi.py            | 114 ++++++++++------------
+ 2 files changed, 286 insertions(+), 64 deletions(-)
+ create mode 100644 examples/draw_primitive.py
+
+diff --git a/examples/draw_primitive.py b/examples/draw_primitive.py
+new file mode 100644
+index 0000000..fac79c1
+--- /dev/null
++++ b/examples/draw_primitive.py
+@@ -0,0 +1,236 @@
++import sys
++
++from brlcad.primitives import union
++
++import brlcad.wdb as wdb
++
++def draw_sphere(primitive_name, arguments, brl_db):
++	center = [float(x) for x in arguments[:3]]
++	radius = float(arguments[3])
++	brl_db.sphere(primitive_name, center, radius)
++	return
++
++def draw_rpp(primitive_name, arguments, brl_db):
++	pmin = [float(x) for x in arguments[:3]]
++	pmax = [float(x) for x in arguments[3:]]
++	brl_db.rpp(primitive_name, pmin, pmax)
++	return
++
++def draw_wedge(primitive_name, arguments, brl_db):
++	vertex = [float(x) for x in arguments[:3]]
++	x_dir  = [float(x) for x in arguments[3:6]]
++	z_dir  = [float(x) for x in arguments[6:9]]
++	x_len, y_len, z_len, x_top_len = arguments[9:]
++	brl_db.wedge(primitive_name, vertex, x_dir, z_dir,
++				 x_len, y_len, z_len, x_top_len)
++	return
++
++def draw_arb4(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:]]
++	brl_db.arb4(primitive_name, v1, v2, v3, v4)
++	return
++
++def draw_arb5(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:]]
++	brl_db.arb5(primitive_name, v1, v2, v3, v4, v5)
++	return
++
++def draw_arb6(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:]]
++	brl_db.arb6(primitive_name, v1, v2, v3, v4, v5, v6)
++	return
++
++def draw_arb7(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:18]]
++	v7 = [float(x) for x in arguments[18:]]	
++	brl_db.arb7(primitive_name, v1, v2, v3, v4, v5, v6, v7)
++	return
++
++def draw_arb8(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:18]]
++	v7 = [float(x) for x in arguments[18:21]]
++	v8 = [float(x) for x in arguments[21:]]
++	brl_db.arb8(primitive_name, v1, v2, v3, v4, v5, v6, v7, v8)
++	return
++
++def draw_ellipsoid(primitive_name, arguments, brl_db):
++	center = [float(x) for x in arguments[:3]]
++	a	  = [float(x) for x in arguments[3:6]]
++	b	  = [float(x) for x in arguments[6:9]]
++	c	  = [float(x) for x in arguments[9:]]
++	brl_db.ellipsoid(primitive_name, center, a, b, c)
++	return
++
++def draw_torus(primitive_name, arguments, brl_db):
++	center = [float(x) for x in arguments[:3]]
++	n	  = [float(x) for x in arguments[3:6]]
++	r_revolution = float(arguments[6])
++	r_cross	  = float(arguments[7])
++	brl_db.torus(primitive_name, center, n,
++				 r_revolution, r_cross)
++	return
++
++def draw_rcc(primitive_name, arguments, brl_db):
++	base   = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	radius = arguments[6]
++	brl_db.rcc(primitive_name, base, height, radius)
++	return
++
++def draw_tgc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	a = [float(x) for x in arguments[6:9]]
++	b = [float(x) for x in arguments[9:12]]
++	c = [float(x) for x in arguments[12:15]]
++	d = [float(x) for x in arguments[15:]]
++	brl_db.tgc(primitive_name, base, height, a, b, c, d)
++	return
++
++def draw_cone(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	n	= [float(x) for x in arguments[3:6]]
++	h, r_base, r_top = [float(x) for x in arguments[6:]]
++	brl_db.cone(primitive_name, base, n, h, r_base, r_top)
++	return
++
++def draw_trc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	r_base, r_top = [float(x) for x in arguments[6:]]
++	brl_db.trc(primitive_name, base, height, r_base, r_top)
++	return
++
++def draw_rpc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	breadth = [float(x) for x in arguments[6:9]]
++	half_width = arguments[9]
++	brl_db.rpc(primitive_name, base, height, breadth, half_width)
++	return
++
++def draw_rhc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	breadth = [float(x) for x in arguments[6:9]]
++	half_width, asymptote = [float(x) for x in arguments[9:]]
++	brl_db.rhc(primitive_name, base, height, breadth, half_width, asymptote)
++	return
++
++def draw_epa(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	n_major = [float(x) for x in arguments[6:9]]
++	r_major, r_minor = [float(x) for x in arguments[9:]]
++	brl_db.epa(primitive_name, base, height, n_major, r_major, r_minor)
++	return
++
++def draw_ehy(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	n_major = [float(x) for x in arguments[6:9]]
++	r_major, r_minor, asymptote = [float(x) for x in arguments[9:]]
++	brl_db.ehy(primitive_name, base, height, n_major,
++			   r_major, r_minor, asymptote)
++	return
++
++def draw_hyperboloid(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	a = [float(x) for x in arguments[6:9]]
++	b_mag, base_neck_ratio = [float(x) for x in arguments[9:]]
++	brl_db.hyperboloid(primitive_name, base, height, a,
++					   b_mag, base_neck_ratio)
++	return
++
++def draw_eto(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	n = [float(x) for x in arguments[3:6]]
++	s_major = [float(x) for x in arguments[6:9]]
++	r_revolution, r_minor = [float(x) for x in arguments[9:]]
++	brl_db.eto(primitive_name, base, n, s_major,
++			   r_revolution, r_minor)
++	return
++
++def draw_arbn(primitive_name, arguments, brl_db):
++	plane_1 = [tuple([float(x) for x in arguments[:3]])]
++	plane_1.append(float(arguments[3]))
++	plane_2 = [tuple([float(x) for x in arguments[4:7]])]
++	plane_2.append(float(arguments[7]))
++	plane_3 = [tuple([float(x) for x in arguments[8:11]])]
++	plane_3.append(float(arguments[11]))
++	plane_4 = [tuple([float(x) for x in arguments[12:15]])]
++	plane_4.append(float(arguments[15]))
++	plane_5 = [tuple([float(x) for x in arguments[16:19]])]
++	plane_5.append(float(arguments[19]))
++	plane_6 = [tuple([float(x) for x in arguments[20:23]])]
++	plane_6.append(float(arguments[23]))
++	planes = [plane_1, plane_2, plane_3, plane_4, plane_5, plane_6]
++	brl_db.arbn(primitive_name, planes)
++	return
++
++def draw_particle(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	r_base, r_end = arguments[6:]
++	brl_db.particle(primitive_name, base, height, r_base, r_end)
++	return
++
++def draw_pipe(primitive_name, arguments, brl_db):
++	point_1 = [tuple(float(x) for x in arguments[:3])]
++	for y in range(3):
++		point_1.append(float(arguments[3+y]))
++	point_2 = [tuple(float(x) for x in arguments[6:9])]
++	for y in range(3):
++		point_2.append(float(arguments[9+y]))
++	point_3 = [tuple(float(x) for x in arguments[12:15])]
++	for y in range(3):
++		point_3.append(float(arguments[15+y]))
++	point_4 = [tuple(float(x) for x in arguments[18:21])]
++	for y in range(3):
++		point_4.append(float(arguments[21+y]))
++	point_5 = [tuple(float(x) for x in arguments[24:27])]
++	for y in range(3):
++		point_5.append(float(arguments[27+y]))
++	point_6 = [tuple(float(x) for x in arguments[30:33])]
++	for y in range(3):
++		point_6.append(float(arguments[33+y]))
++	point_7 = [tuple(float(x) for x in arguments[36:39])]
++	for y in range(3):
++		point_7.append(float(arguments[39+y]))
++	point_8 = [tuple(float(x) for x in arguments[42:45])]
++	for y in range(3):
++		point_8.append(float(arguments[45+y]))
++	point_9 = [tuple(float(x) for x in arguments[48:51])]
++	for y in range(3):
++		point_9.append(float(arguments[51+y]))
++	point_10 = [tuple(float(x) for x in arguments[54:57])]
++	for y in range(3):
++		point_10.append(float(arguments[57+y]))
++
++	points = [point_1, point_2, point_3, point_4, point_5, 
++			  point_6, point_7, point_8, point_9, point_10]
++
++	brl_db.pipe(primitive_name, points)
+\ No newline at end of file
+diff --git a/examples/sgi.py b/examples/sgi.py
+index 09915d7..d976bf1 100644
+--- a/examples/sgi.py
++++ b/examples/sgi.py
+@@ -15,71 +15,55 @@ import sys
+ 
+ from brlcad.primitives import union
+ 
++from draw_primitive import *
++
+ import brlcad.wdb as wdb
+ 
+-def right(a, b):
++def right(a, b, rcc_name, sph_name):
+     global x
+     old = x
+     x = old + b
+-    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
+-    name_tracker.extend((rcc_name, sph_name))
+-    brl_db.rcc(rcc_name, base = (old, y, z), height = (x - old, 0, 0), radius = radius)
+-    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
++    draw_rcc(rcc_name, [old, y, z, x-old, 0, 0, radius], brl_db)
++    draw_sphere(sph_name, [x, y, z, radius], brl_db)
+ 
+-def left(a, b):
++def left(a, b, rcc_name, sph_name):
+     global x
+     old = x
+     x = old - b
+-    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
+-    name_tracker.extend((rcc_name, sph_name))
+-    brl_db.rcc(rcc_name, base = (old, y, z), height = (x - old, 0, 0), radius = radius)
+-    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
+-    return
++    draw_rcc(rcc_name, [old, y, z, x - old, 0, 0, radius], brl_db)
++    draw_sphere(sph_name, [x, y, z, radius], brl_db)
+ 
+-def forward(a, b):
++def forward(a, b, rcc_name, sph_name):
+     global y
+     old = y
+     y = old + b
+-    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
+-    name_tracker.extend((rcc_name, sph_name))
+-    brl_db.rcc(rcc_name, base = (x, old, z), height = (0, y - old, 0), radius = radius)
+-    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
+-    return
++    draw_rcc(rcc_name, [x, old, z, 0, y - old, 0, radius], brl_db)
++    draw_sphere(sph_name, [x, y, z, radius], brl_db)
+ 
+-def back(a, b):
++def back(a, b, rcc_name, sph_name):
+     global y
+     old = y
+     y = old - b
+-    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
+-    name_tracker.extend((rcc_name, sph_name))
+-    brl_db.rcc(rcc_name, base = (x, old, z), height = (0, y - old, 0), radius = radius)
+-    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
+-    return
++    draw_rcc(rcc_name, [x, old, z, 0, y - old, 0, radius], brl_db)
++    draw_sphere(sph_name, [x, y, z, radius], brl_db)
+ 
+-def up(a, b):
++def up(a, b, rcc_name, sph_name):
+     global z
+     old = z
+     z = old + b
+-    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
+-    name_tracker.extend((rcc_name, sph_name))
+-    brl_db.rcc(rcc_name, base = (x, y, old), height = (0, 0, z - old), radius = radius)
+-    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
+-    return
++    draw_rcc(rcc_name, [x, y, old, 0, 0, z - old, radius], brl_db)
++    draw_sphere(sph_name, [x, y, z, radius], brl_db)
+ 
+-def down(a, b):
++def down(a, b, rcc_name, sph_name):
+     global z
+     old = z
+     z = old - b
+-    rcc_name, sph_name = "rcc." + str(a), "sph." + str(a)
+-    name_tracker.extend((rcc_name, sph_name))
+-    brl_db.rcc(rcc_name, base = (x, y, old), height = (0, 0, z - old), radius = radius)
+-    brl_db.sphere(sph_name, center = (x, y, z), radius = radius)
+-    return
++    draw_rcc(rcc_name, [x, y, old, 0, 0, z - old, radius], brl_db)
++    draw_sphere(sph_name, [x, y, z, radius], brl_db)
+ 
+ if __name__ == "__main__":
+     argv = sys.argv
+     database_name = argv[1]
+-    name_tracker = []
+     
+     # cube dimensions
+     i, j, radius = 1000, 800, 100
+@@ -89,37 +73,39 @@ if __name__ == "__main__":
+     
+     brl_db = wdb.WDB(database_name, "SGI.g")
+ 
+-    forward(100, i)
+-    left(101, j)
+-    down(102, i)
+-    right(103, i)
+-    up(104, j)
+-    back(105, i)
+-    down(106, i)
+-    forward(107, i)
+-    left(108, i)
+-    back(109, i)
+-    right(110, j)
+-    up(111, i)
+-    left(112, i)
+-    down(113, j)
+-    forward(114, i)
+-    up(115, i)
+-    back(116, j)
+-    right(117, i)
+-
+-    print(name_tracker)
+-
+-    union_list = []
+-
+-    for element in name_tracker:
+-        if "rcc" in element or "sph" in element:
+-            union_list.append(element)
++    rcc_name_list, sph_name_list, union_list = [], [], []
++
++    for iterator in range (100, 118):
++        rcc_name, sph_name = "rcc." + str(iterator), "sph." + str(iterator)
++        rcc_name_list.append(rcc_name)
++        sph_name_list.append(sph_name)
++        union_list.extend((rcc_name, sph_name))
++
++    print(rcc_name_list)
++
++    forward(100, i, rcc_name_list[0], sph_name_list[0])
++    left(101, j, rcc_name_list[1], sph_name_list[1])
++    down(102, i, rcc_name_list[2], sph_name_list[2])
++    right(103, i, rcc_name_list[3], sph_name_list[3])
++    up(104, j, rcc_name_list[4], sph_name_list[4])
++    back(105, i, rcc_name_list[5], sph_name_list[5])
++    down(106, i, rcc_name_list[6], sph_name_list[6])
++    forward(107, i, rcc_name_list[7], sph_name_list[7])
++    left(108, i, rcc_name_list[8], sph_name_list[8])
++    back(109, i, rcc_name_list[9], sph_name_list[9])
++    right(110, j, rcc_name_list[10], sph_name_list[10])
++    up(111, i, rcc_name_list[11], sph_name_list[11])
++    left(112, i, rcc_name_list[12], sph_name_list[12])
++    down(113, j, rcc_name_list[13], sph_name_list[13])
++    forward(114, i, rcc_name_list[14], sph_name_list[14])
++    up(115, i, rcc_name_list[15], sph_name_list[15])
++    back(116, j, rcc_name_list[16], sph_name_list[16])
++    right(117, i, rcc_name_list[17], sph_name_list[17])
+ 
+     brl_db.combination(
+             "cube.r",
+             is_region=True,
+             tree=union(union_list),
+-            shader="cook {re=.8 di=2 sp=1 ri=10}",
+-            rgb_color=(250, 250, 250)
++            shader="plastic {di=.8 sp=.2}",
++            rgb_color=(64, 180, 96)
+         )
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 9f70e7738260be1f566e3a58756af281697f2ce0 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Wed, 11 Jul 2018 16:02:23 +0530
+Subject: [PATCH 21/47] Condensed to the core
+
+---
+ examples/sgi.py | 16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
+
+diff --git a/examples/sgi.py b/examples/sgi.py
+index d976bf1..0c8985d 100644
+--- a/examples/sgi.py
++++ b/examples/sgi.py
+@@ -2,21 +2,15 @@
+ This is the python version of sgi.sh using the python-brlcad module.
+ 
+ usage:
+-
+     python sgi.py sgi.g
+-
+-    To Render : 
+-
++To Render : 
+     rtedge -s 1024 -F output.pix sgi.g cube.r
+     pix-png -s 1024 < output.pix > output.png
+ """
+ 
+ import sys
+-
+ from brlcad.primitives import union
+-
+ from draw_primitive import *
+-
+ import brlcad.wdb as wdb
+ 
+ def right(a, b, rcc_name, sph_name):
+@@ -64,15 +58,11 @@ def down(a, b, rcc_name, sph_name):
+ if __name__ == "__main__":
+     argv = sys.argv
+     database_name = argv[1]
+-    
+     # cube dimensions
+     i, j, radius = 1000, 800, 100
+-
+     # starting position
+     x, y, z = 0, 0, 0
+-    
+     brl_db = wdb.WDB(database_name, "SGI.g")
+-
+     rcc_name_list, sph_name_list, union_list = [], [], []
+ 
+     for iterator in range (100, 118):
+@@ -81,8 +71,6 @@ if __name__ == "__main__":
+         sph_name_list.append(sph_name)
+         union_list.extend((rcc_name, sph_name))
+ 
+-    print(rcc_name_list)
+-
+     forward(100, i, rcc_name_list[0], sph_name_list[0])
+     left(101, j, rcc_name_list[1], sph_name_list[1])
+     down(102, i, rcc_name_list[2], sph_name_list[2])
+@@ -108,4 +96,4 @@ if __name__ == "__main__":
+             tree=union(union_list),
+             shader="plastic {di=.8 sp=.2}",
+             rgb_color=(64, 180, 96)
+-        )
++        )
+\ No newline at end of file
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 72d15322f006cb52b8e99df1ba959d8cd067d38f Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Wed, 11 Jul 2018 16:18:42 +0530
+Subject: [PATCH 22/47] Managed to drop 6 more lines
+
+---
+ examples/sgi.py | 38 ++++++++++++++++----------------------
+ 1 file changed, 16 insertions(+), 22 deletions(-)
+
+diff --git a/examples/sgi.py b/examples/sgi.py
+index 0c8985d..9e97bb0 100644
+--- a/examples/sgi.py
++++ b/examples/sgi.py
+@@ -57,38 +57,32 @@ def down(a, b, rcc_name, sph_name):
+ 
+ if __name__ == "__main__":
+     argv = sys.argv
++    union_list = []
+     database_name = argv[1]
+     # cube dimensions
+     i, j, radius = 1000, 800, 100
+     # starting position
+     x, y, z = 0, 0, 0
+     brl_db = wdb.WDB(database_name, "SGI.g")
+-    rcc_name_list, sph_name_list, union_list = [], [], []
++    forward_list, back_list = [100, 107, 114], [105, 109, 116]
++    up_list, down_list      = [104, 111, 115], [102, 106, 113]
++    right_list, left_list   = [103, 110, 117], [101, 108, 112]
+ 
+     for iterator in range (100, 118):
+         rcc_name, sph_name = "rcc." + str(iterator), "sph." + str(iterator)
+-        rcc_name_list.append(rcc_name)
+-        sph_name_list.append(sph_name)
+         union_list.extend((rcc_name, sph_name))
+-
+-    forward(100, i, rcc_name_list[0], sph_name_list[0])
+-    left(101, j, rcc_name_list[1], sph_name_list[1])
+-    down(102, i, rcc_name_list[2], sph_name_list[2])
+-    right(103, i, rcc_name_list[3], sph_name_list[3])
+-    up(104, j, rcc_name_list[4], sph_name_list[4])
+-    back(105, i, rcc_name_list[5], sph_name_list[5])
+-    down(106, i, rcc_name_list[6], sph_name_list[6])
+-    forward(107, i, rcc_name_list[7], sph_name_list[7])
+-    left(108, i, rcc_name_list[8], sph_name_list[8])
+-    back(109, i, rcc_name_list[9], sph_name_list[9])
+-    right(110, j, rcc_name_list[10], sph_name_list[10])
+-    up(111, i, rcc_name_list[11], sph_name_list[11])
+-    left(112, i, rcc_name_list[12], sph_name_list[12])
+-    down(113, j, rcc_name_list[13], sph_name_list[13])
+-    forward(114, i, rcc_name_list[14], sph_name_list[14])
+-    up(115, i, rcc_name_list[15], sph_name_list[15])
+-    back(116, j, rcc_name_list[16], sph_name_list[16])
+-    right(117, i, rcc_name_list[17], sph_name_list[17])
++        if iterator in forward_list:
++            forward(iterator, i, rcc_name, sph_name)
++        if iterator in back_list:
++            back(iterator, i, rcc_name, sph_name)
++        if iterator in up_list:
++            up(iterator, i, rcc_name, sph_name)
++        if iterator in down_list:
++            down(iterator, i, rcc_name, sph_name)
++        if iterator in right_list:
++            right(iterator, i, rcc_name, sph_name)
++        if iterator in left_list:
++            left(iterator, i, rcc_name, sph_name)
+ 
+     brl_db.combination(
+             "cube.r",
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 5a8eca4f78342372f6ffa810b14fc22b4bed4c3c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 13 Jul 2018 03:17:38 +0530
+Subject: [PATCH 23/47] Rounded rcc
+
+---
+ examples/rounded_rcc.py | 40 ++++++++++++++++++++++++++++++++++++++++
+ examples/rounder_rcc.py | 40 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 80 insertions(+)
+ create mode 100644 examples/rounded_rcc.py
+ create mode 100644 examples/rounder_rcc.py
+
+diff --git a/examples/rounded_rcc.py b/examples/rounded_rcc.py
+new file mode 100644
+index 0000000..0fc6a32
+--- /dev/null
++++ b/examples/rounded_rcc.py
+@@ -0,0 +1,40 @@
++"""
++This is the python version of sgi.sh using the python-brlcad module.
++
++usage:
++    python sgi.py sgi.g
++To Render : 
++    rtedge -s 1024 -F output.pix sgi.g cube.r
++    pix-png -s 1024 < output.pix > output.png
++"""
++
++import sys
++from brlcad.primitives import union
++from draw_primitive import *
++import brlcad.wdb as wdb
++
++def rounder_rcc(c_radius, c_length, rounding_radius):
++    origin = (0, 0, 0)
++    base   = (0, 0, rounding_radius)
++    filler = (0, 0, c_length)
++    top_tor = (0, 0, c_length - rounding_radius)
++    height = (0, 0, c_length - 2 * rounding_radius)
++    neg_z_dir, pos_z_dir = (0, 0, -1), (0, 0, 1)
++    brl_db.rcc("cylinder.rcc", base, height, c_radius)
++    brl_db.rcc("fillend.rcc", origin, filler, c_radius - rounding_radius)
++    brl_db.torus("bottom.tor", base, neg_z_dir, c_radius - rounding_radius, rounding_radius)
++    brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
++    union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
++    brl_db.combination(
++        "cube.r",
++        is_region=False,
++        tree=union(union_list)
++    )
++
++   
++if __name__ == "__main__":
++    argv = sys.argv
++    union_list = []
++    database_name = argv[1]
++    brl_db = wdb.WDB(database_name, "fml.g")
++    rounder_rcc(40, 100, 10)
+diff --git a/examples/rounder_rcc.py b/examples/rounder_rcc.py
+new file mode 100644
+index 0000000..0fc6a32
+--- /dev/null
++++ b/examples/rounder_rcc.py
+@@ -0,0 +1,40 @@
++"""
++This is the python version of sgi.sh using the python-brlcad module.
++
++usage:
++    python sgi.py sgi.g
++To Render : 
++    rtedge -s 1024 -F output.pix sgi.g cube.r
++    pix-png -s 1024 < output.pix > output.png
++"""
++
++import sys
++from brlcad.primitives import union
++from draw_primitive import *
++import brlcad.wdb as wdb
++
++def rounder_rcc(c_radius, c_length, rounding_radius):
++    origin = (0, 0, 0)
++    base   = (0, 0, rounding_radius)
++    filler = (0, 0, c_length)
++    top_tor = (0, 0, c_length - rounding_radius)
++    height = (0, 0, c_length - 2 * rounding_radius)
++    neg_z_dir, pos_z_dir = (0, 0, -1), (0, 0, 1)
++    brl_db.rcc("cylinder.rcc", base, height, c_radius)
++    brl_db.rcc("fillend.rcc", origin, filler, c_radius - rounding_radius)
++    brl_db.torus("bottom.tor", base, neg_z_dir, c_radius - rounding_radius, rounding_radius)
++    brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
++    union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
++    brl_db.combination(
++        "cube.r",
++        is_region=False,
++        tree=union(union_list)
++    )
++
++   
++if __name__ == "__main__":
++    argv = sys.argv
++    union_list = []
++    database_name = argv[1]
++    brl_db = wdb.WDB(database_name, "fml.g")
++    rounder_rcc(40, 100, 10)
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 9700ed02bf947f502e8408f7e037555de1d9f56c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 13 Jul 2018 03:18:09 +0530
+Subject: [PATCH 24/47] Rounded rcc
+
+---
+ examples/rounder_rcc.py | 40 ----------------------------------------
+ 1 file changed, 40 deletions(-)
+ delete mode 100644 examples/rounder_rcc.py
+
+diff --git a/examples/rounder_rcc.py b/examples/rounder_rcc.py
+deleted file mode 100644
+index 0fc6a32..0000000
+--- a/examples/rounder_rcc.py
++++ /dev/null
+@@ -1,40 +0,0 @@
+-"""
+-This is the python version of sgi.sh using the python-brlcad module.
+-
+-usage:
+-    python sgi.py sgi.g
+-To Render : 
+-    rtedge -s 1024 -F output.pix sgi.g cube.r
+-    pix-png -s 1024 < output.pix > output.png
+-"""
+-
+-import sys
+-from brlcad.primitives import union
+-from draw_primitive import *
+-import brlcad.wdb as wdb
+-
+-def rounder_rcc(c_radius, c_length, rounding_radius):
+-    origin = (0, 0, 0)
+-    base   = (0, 0, rounding_radius)
+-    filler = (0, 0, c_length)
+-    top_tor = (0, 0, c_length - rounding_radius)
+-    height = (0, 0, c_length - 2 * rounding_radius)
+-    neg_z_dir, pos_z_dir = (0, 0, -1), (0, 0, 1)
+-    brl_db.rcc("cylinder.rcc", base, height, c_radius)
+-    brl_db.rcc("fillend.rcc", origin, filler, c_radius - rounding_radius)
+-    brl_db.torus("bottom.tor", base, neg_z_dir, c_radius - rounding_radius, rounding_radius)
+-    brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
+-    union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
+-    brl_db.combination(
+-        "cube.r",
+-        is_region=False,
+-        tree=union(union_list)
+-    )
+-
+-   
+-if __name__ == "__main__":
+-    argv = sys.argv
+-    union_list = []
+-    database_name = argv[1]
+-    brl_db = wdb.WDB(database_name, "fml.g")
+-    rounder_rcc(40, 100, 10)
+-- 
+2.14.3 (Apple Git-98)
+
+
+From d94693149831af88f13ec620e548267fcbfab294 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 13 Jul 2018 03:19:44 +0530
+Subject: [PATCH 25/47] Minor change
+
+---
+ examples/rounded_rcc.py | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/examples/rounded_rcc.py b/examples/rounded_rcc.py
+index 0fc6a32..18ce5cd 100644
+--- a/examples/rounded_rcc.py
++++ b/examples/rounded_rcc.py
+@@ -1,11 +1,5 @@
+ """
+-This is the python version of sgi.sh using the python-brlcad module.
+-
+-usage:
+-    python sgi.py sgi.g
+-To Render : 
+-    rtedge -s 1024 -F output.pix sgi.g cube.r
+-    pix-png -s 1024 < output.pix > output.png
++Run : python rounded_rcc.py <<db>>.g
+ """
+ 
+ import sys
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 4e1665ec59bad4fff8ce51f1b0433b6f3f90145e Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Mon, 16 Jul 2018 15:18:29 +0530
+Subject: [PATCH 26/47] Basic Sanity Check Added
+
+---
+ examples/rounded_rcc.py | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/examples/rounded_rcc.py b/examples/rounded_rcc.py
+index 18ce5cd..38bf142 100644
+--- a/examples/rounded_rcc.py
++++ b/examples/rounded_rcc.py
+@@ -7,7 +7,16 @@ from brlcad.primitives import union
+ from draw_primitive import *
+ import brlcad.wdb as wdb
+ 
++def sanity_check(c_radius, c_length, rounding_radius):
++    if rounding_radius > c_radius/2:
++        raise ValueError("Rounding Radius cannot be larger than 0.5 * Cylinder Radius")
++        exit()
++    if rounding_radius > c_length/2:
++        raise ValueError("Rounding Radius cannot be larger than 0.5 * Cylinder Height")
++        exit()
++
+ def rounder_rcc(c_radius, c_length, rounding_radius):
++    sanity_check(c_radius, c_length, rounding_radius)
+     origin = (0, 0, 0)
+     base   = (0, 0, rounding_radius)
+     filler = (0, 0, c_length)
+@@ -20,7 +29,7 @@ def rounder_rcc(c_radius, c_length, rounding_radius):
+     brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
+     union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
+     brl_db.combination(
+-        "cube.r",
++        "cylinder3.r",
+         is_region=False,
+         tree=union(union_list)
+     )
+@@ -31,4 +40,4 @@ if __name__ == "__main__":
+     union_list = []
+     database_name = argv[1]
+     brl_db = wdb.WDB(database_name, "fml.g")
+-    rounder_rcc(40, 100, 10)
++    rounder_rcc(40, 100, 21)
+\ No newline at end of file
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 8250a0b4475ec92398a846c9269be8ba4b6bd944 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Mon, 16 Jul 2018 23:17:47 +0530
+Subject: [PATCH 27/47] Class Rounded RCC
+
+---
+ examples/class_rounded_rcc.py | 53 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
+ create mode 100644 examples/class_rounded_rcc.py
+
+diff --git a/examples/class_rounded_rcc.py b/examples/class_rounded_rcc.py
+new file mode 100644
+index 0000000..949784f
+--- /dev/null
++++ b/examples/class_rounded_rcc.py
+@@ -0,0 +1,53 @@
++"""
++Run : python rounded_rcc.py <<db>>.g
++"""
++
++import sys
++from brlcad.primitives import union
++from draw_primitive import *
++import brlcad.wdb as wdb
++
++class rounded_rcc():
++    def __init__(self, brl_db, inmem):
++        '''
++        Here is where we could deal with inmem db.
++        inmem could be true or false
++        '''
++        self.brl_db = brl_db
++        self.inmem  = inmem
++
++    def sanity_check(self, c_radius, c_length, rounding_radius):
++        if rounding_radius > c_radius/2:
++            raise ValueError("Rounding Radius cannot be larger than 0.5 * Cylinder Radius")
++            exit()
++        if rounding_radius > c_length/2:
++            raise ValueError("Rounding Radius cannot be larger than 0.5 * Cylinder Height")
++            exit()
++
++    def create(self, c_radius, c_length, rounding_radius):
++        self.sanity_check(c_radius, c_length, rounding_radius)
++        origin = (0, 0, 0)
++        base   = (0, 0, rounding_radius)
++        filler = (0, 0, c_length)
++        top_tor = (0, 0, c_length - rounding_radius)
++        height = (0, 0, c_length - 2 * rounding_radius)
++        neg_z_dir, pos_z_dir = (0, 0, -1), (0, 0, 1)
++        self.brl_db.rcc("cylinder.rcc", base, height, c_radius)
++        self.brl_db.rcc("fillend.rcc", origin, filler, c_radius - rounding_radius)
++        self.brl_db.torus("bottom.tor", base, neg_z_dir, c_radius - rounding_radius, rounding_radius)
++        self.brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
++        union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
++        self.brl_db.combination(
++            "cylinder3.r",
++            is_region=False,
++            tree=union(union_list)
++        )
++
++   
++if __name__ == "__main__":
++    argv = sys.argv
++    union_list = []
++    database_name = argv[1]
++    brl_db = wdb.WDB(database_name, "fml.g")
++    myObject = rounded_rcc(brl_db)
++    myObject.create(50, 220, 21)
+\ No newline at end of file
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 37a7ec521c79b45052e200793d9c2c671332d5fd Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 20 Jul 2018 21:55:42 +0530
+Subject: [PATCH 28/47] Changed wdb.WDB -> geometry.Database()
+
+---
+ brlcad/{wdb.py => geometry.py} | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+ rename brlcad/{wdb.py => geometry.py} (99%)
+
+diff --git a/brlcad/wdb.py b/brlcad/geometry.py
+similarity index 99%
+rename from brlcad/wdb.py
+rename to brlcad/geometry.py
+index 7ec3306..0fab4ff 100644
+--- a/brlcad/wdb.py
++++ b/brlcad/geometry.py
+@@ -55,7 +55,7 @@ def mk_wrap_primitive(primitive_class):
+     return wrapper_func
+ 
+ 
+-class WDB:
++class Database:
+     """
+     Object to open or create a BRLCad data base file and read/write/modify it.
+     """
+@@ -69,7 +69,7 @@ class WDB:
+                     raise BRLCADException("Can't open existing DB file: <{0}>".format(db_file))
+                 if libwdb.db_dirbuild(self.db_ip) < 0:
+                     raise BRLCADException("Failed loading directory of DB file: <{}>".format(db_file))
+-                self.db_fp = libwdb.wdb_dbopen(self.db_ip, libwdb.RT_WDB_TYPE_DB_DISK)
++                self.db_fp = libwdb.wdb_dbopen(self.db_ip, libwdb._RT_WDB_TYPE_DB_INMEM)
+                 if self.db_fp == libwdb.RT_WDB_NULL:
+                     raise BRLCADException("Failed read existing DB file: <{}>".format(db_file))
+             if not self.db_fp:
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 22fdba466d5d8710d00faec93c38d7d162da9f2a Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 20 Jul 2018 21:57:28 +0530
+Subject: [PATCH 29/47] Updated Examples
+
+---
+ examples/__init__.py                 |   0
+ examples/arithematic_parser.py       |   2 +-
+ examples/hilbert_2d.py               |   2 +-
+ examples/hilbert_3d.py               |   2 +-
+ examples/new.sh                      | 128 +++++++++++++++++++++++++++++++++++
+ examples/output.pix                  | Bin 0 -> 3145728 bytes
+ examples/output.png                  | Bin 0 -> 14436 bytes
+ examples/rounded_rcc.py              |   6 +-
+ examples/rounder_cylinder_method.asc |  22 ++++++
+ examples/sgi.png                     | Bin 0 -> 644665 bytes
+ examples/sgi.tcl                     |  34 ++++++++++
+ examples/temp.tcl                    |   4 +-
+ examples/wdb_globe.py                |   2 +-
+ examples/wdb_primitives.py           |   2 +-
+ 14 files changed, 195 insertions(+), 9 deletions(-)
+ create mode 100644 examples/__init__.py
+ create mode 100755 examples/new.sh
+ create mode 100644 examples/output.pix
+ create mode 100644 examples/output.png
+ create mode 100644 examples/rounder_cylinder_method.asc
+ create mode 100644 examples/sgi.png
+ create mode 100644 examples/sgi.tcl
+
+diff --git a/examples/__init__.py b/examples/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/examples/arithematic_parser.py b/examples/arithematic_parser.py
+index 9bde792..6d8fe7b 100644
+--- a/examples/arithematic_parser.py
++++ b/examples/arithematic_parser.py
+@@ -1,5 +1,5 @@
+ from __future__ import division
+-
++from arithematic_parser import *
+ import os
+ import sys
+ import re
+diff --git a/examples/hilbert_2d.py b/examples/hilbert_2d.py
+index e697b3e..3b3d669 100644
+--- a/examples/hilbert_2d.py
++++ b/examples/hilbert_2d.py
+@@ -2,7 +2,7 @@
+ Fractal pipes :-)
+ """
+ from brlcad.vmath import Vector
+-from brlcad.wdb import WDB
++import brlcad.wdb as wdb
+ import sys
+ 
+ 
+diff --git a/examples/hilbert_3d.py b/examples/hilbert_3d.py
+index 7159729..97fcabe 100644
+--- a/examples/hilbert_3d.py
++++ b/examples/hilbert_3d.py
+@@ -2,7 +2,7 @@
+ 3D Hilbert space filling curve with pipes.
+ """
+ from brlcad.vmath import Vector
+-from brlcad.wdb import WDB
++import brlcad.wdb as wdb
+ import sys
+ 
+ 
+diff --git a/examples/new.sh b/examples/new.sh
+new file mode 100755
+index 0000000..0209bf6
+--- /dev/null
++++ b/examples/new.sh
+@@ -0,0 +1,128 @@
++#!/bin/sh
++#                          s g i . s h
++#
++# This is an example script for creating and rendering the SGI Cube
++# logo as BRL-CAD geometry.
++#
++# The SGI cube is a registered trademark of SGI.
++#
++# This script is in the public domain.
++#
++#####################################################################
++
++SGI="`basename $0`"
++rm -f $SGI.*
++
++# cube dimensions
++i=1000 ; j=800 ; radius=100
++
++# starting position
++x=0 ; y=0 ; z=0
++
++# functions to create geometry for each direction of the cube
++right ( ) {
++    old=$x
++    x=$((old + $2))
++    mged -c $SGI.g in rcc.$1 rcc $old $y $z $((x - old)) 0 0 $radius
++    mged -c $SGI.g in sph.$1 sph $x $y $z $radius
++}
++left ( ) {
++    old=$x
++    x=$((old - $2))
++    mged -c $SGI.g in rcc.$1 rcc $old $y $z $((x - old)) 0 0 $radius
++    mged -c $SGI.g in sph.$1 sph $x $y $z $radius
++}
++forward ( ) {
++    old=$y
++    y=$((old + $2))
++    mged -c $SGI.g in rcc.$1 rcc $x $old $z 0 $((y - old)) 0 $radius
++    mged -c $SGI.g in sph.$1 sph $x $y $z $radius
++}
++back ( ) {
++    old=$y
++    y=$((old - $2))
++    mged -c $SGI.g in rcc.$1 rcc $x $old $z 0 $((y - old)) 0 $radius
++    mged -c $SGI.g in sph.$1 sph $x $y $z $radius
++}
++up ( ) {
++    old=$z
++    z=$((old + $2))
++    mged -c $SGI.g in rcc.$1 rcc $x $y $old 0 0 $((z - old)) $radius
++    mged -c $SGI.g in sph.$1 sph $x $y $z $radius
++}
++down ( ) {
++    old=$z
++    z=$((old - $2))
++    mged -c $SGI.g in rcc.$1 rcc $x $y $old 0 0 $((z - old)) $radius
++    mged -c $SGI.g in sph.$1 sph $x $y $z $radius
++}
++
++###########################
++echo "Creating the cube..."
++
++forward	100 $i
++left	101 $j
++down	102 $i
++right	103 $i
++up	104 $j
++back	105 $i
++down	106 $i
++forward	107 $j
++left	108 $i
++back	109 $i
++right	110 $j
++up	111 $i
++left	112 $i
++down	113 $j
++forward	114 $i
++up	115 $i
++back	116 $j
++right	117 $i
++
++# combine all the primitives together via unions
++mged -c $SGI.g g cube.c rcc.* sph.*
++
++# create a region from that combination (make it occupy physical space)
++mged -c $SGI.g r cube.r u cube.c
++
++# assign some material properties using a cook-torrence shader
++mged -c $SGI.g mater cube.r \"cook re=.8 di=1 sp=1 ri=10\" 250 250 250 0
++
++###########################
++echo "Rendering the cube..."
++
++# pipe in mged commands for setting up and saving the view to a render script
++cat <<EOF | mged -c $SGI.g
++B cube.r
++ae 135 -35 180
++set perspective 20
++zoom .25
++saveview $SGI.rt
++EOF
++
++# render the view we saved as a 1024x1024 image
++./$SGI.rt -s1024
++
++# convert from raw pix image format to png format
++pix-png -s1024 < $SGI.rt.pix > $SGI.png
++
++# display the png image in a framebuffer window
++png-fb $SGI.png
++
++# keep the geometry database as sgi.g and the rendering as sgi.png
++mv $SGI.g sgi.g
++mv $SGI.png sgi.png
++
++# clean up after ourselves
++rm -f $SGI.*
++
++echo "The SGI cube is in the sgi.g BRL-CAD geometry database file."
++
++# Local Variables:
++# mode: sh
++# tab-width: 8
++# sh-indentation: 4
++# sh-basic-offset: 4
++# indent-tabs-mode: t
++# End:
++# ex: shiftwidth=4 tabstop=8
+
+diff --git a/examples/rounded_rcc.py b/examples/rounded_rcc.py
+index 38bf142..77c210e 100644
+--- a/examples/rounded_rcc.py
++++ b/examples/rounded_rcc.py
+@@ -5,7 +5,7 @@ Run : python rounded_rcc.py <<db>>.g
+ import sys
+ from brlcad.primitives import union
+ from draw_primitive import *
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ 
+ def sanity_check(c_radius, c_length, rounding_radius):
+     if rounding_radius > c_radius/2:
+@@ -39,5 +39,5 @@ if __name__ == "__main__":
+     argv = sys.argv
+     union_list = []
+     database_name = argv[1]
+-    brl_db = wdb.WDB(database_name, "fml.g")
+-    rounder_rcc(40, 100, 21)
+\ No newline at end of file
++    brl_db = geometry.Database(database_name, "fml.g")
++    rounder_rcc(40, 100, 19)
+\ No newline at end of file
+diff --git a/examples/rounder_cylinder_method.asc b/examples/rounder_cylinder_method.asc
+new file mode 100644
+index 0000000..52fdb67
+--- /dev/null
++++ b/examples/rounder_cylinder_method.asc
+@@ -0,0 +1,22 @@
++put {cylinder.rcc} tgc V {0 0 -500}  H {0 0 1000}  A {250 0 0}  B {0 250 0}  C {250 0 0}  D {0 250 0} 
++
++put {fillends.rcc} tgc V {0 0 -550}  H {0 0 1100}  A {0 -200 0}  B {200 0 0}  C {0 -200 0}  D {200 0 0} 
++	
++put {bottom.tor} tor V {0 0 -500}  H {0 0 -1}  r_a 200 r_h 50
++
++put {top.tor} tor V {0 0 500}  H {0 0 1}  r_a 200 r_h 50
++
++
++put {method1} comb region no 
++tree
++{u 
++	{u 
++		{l cylinder.rcc} 
++		{l fillends.rcc}
++	} 
++
++	{u 
++		{l top.tor} 
++		{l bottom.tor}
++	}
++}
+\ No newline at end of file
+
+diff --git a/examples/sgi.tcl b/examples/sgi.tcl
+new file mode 100644
+index 0000000..74064f8
+--- /dev/null
++++ b/examples/sgi.tcl
+@@ -0,0 +1,34 @@
++title db.g
++units mm
++set i 1
++set j 5
++set radius 100
++set x 0
++set y 0
++set z 0
++
++proc right {a b} {
++	set old $x
++	set x [expr {$old + $b}]
++	in rcc.$a rcc $old $y $z [exp{$x - $old}] 0 0 $radius
++	in sph.$a sph $x $y $z $radius
++}
++
++proc left {a b c d} 
++{
++	set old $x
++	set x [expr {$old + $b}]
++	in rcc.$a rcc $old $y $z [exp{$x - $old}] 0 0 $radius
++	in sph.$a sph $x $y $z $radius
++}
++
++proc top {a b} {
++	set old $x
++	set x [expr {$old + $b}]
++	in rcc.$a rcc $old $y $z [exp{$x - $old}] 0 0 $radius
++	in sph.$a sph $x $y $z $radius
++}
++
++top i 100
++right j 10
++left i j x 1000
+diff --git a/examples/temp.tcl b/examples/temp.tcl
+index 0760730..c11a6d2 100644
+--- a/examples/temp.tcl
++++ b/examples/temp.tcl
+@@ -1,3 +1,5 @@
+ title db.g
+ units mm
+-in planes.s arbn 0 0 -1 -8 0 0 1 9 -1 0 0 0.5 1 0 0 0.5 0 -1 0 0.5 0 1 0 0.5
+\ No newline at end of file
++set i 1
++set j 5
++in ball.s sph $i 2 $j [exp{$j - $i}] [exp{$i - $j}]
+\ No newline at end of file
+diff --git a/examples/wdb_globe.py b/examples/wdb_globe.py
+index add4bb3..8d49867 100644
+--- a/examples/wdb_globe.py
++++ b/examples/wdb_globe.py
+@@ -15,7 +15,7 @@ python attribution:
+ """
+ 
+ import argparse
+-from brlcad.wdb import WDB
++import brlcad.wdb as wdb
+ from brlcad.primitives import subtract, union
+ 
+ 
+diff --git a/examples/wdb_primitives.py b/examples/wdb_primitives.py
+index da83f5d..8d2f91f 100644
+--- a/examples/wdb_primitives.py
++++ b/examples/wdb_primitives.py
+@@ -1,5 +1,5 @@
+ from brlcad.vmath import Transform
+-from brlcad.wdb import WDB
++import brlcad.wdb as wdb
+ from brlcad import primitives
+ 
+ if __name__ == "__main__":
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 14638b201727021ece576b377abc5eeee2e96b80 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 20 Jul 2018 22:11:35 +0530
+Subject: [PATCH 30/47] Fixed examples and tests
+
+---
+ examples/.DS_Store            | Bin 0 -> 8196 bytes
+ examples/class_rounded_rcc.py |   4 ++--
+ examples/draw_primitive.py    |   2 +-
+ examples/hilbert_2d.py        |   2 +-
+ examples/hilbert_3d.py        |   2 +-
+ examples/script.py            |   4 ++--
+ examples/sgi.py               |   4 ++--
+ examples/wdb_example.py       |   4 ++--
+ examples/wdb_globe.py         |   2 +-
+ examples/wdb_primitives.py    |   2 +-
+ tests/test_bot.py             |   6 +++---
+ tests/test_sketch.py          |   6 +++---
+ tests/test_wdb.py             |  10 +++++-----
+ 13 files changed, 24 insertions(+), 24 deletions(-)
+ create mode 100644 examples/.DS_Store
+
+diff --git a/examples/class_rounded_rcc.py b/examples/class_rounded_rcc.py
+index 949784f..2a4a118 100644
+--- a/examples/class_rounded_rcc.py
++++ b/examples/class_rounded_rcc.py
+@@ -5,7 +5,7 @@ Run : python rounded_rcc.py <<db>>.g
+ import sys
+ from brlcad.primitives import union
+ from draw_primitive import *
+-import brlcad.wdb as wdb
++from brlcad.geometry import Database
+ 
+ class rounded_rcc():
+     def __init__(self, brl_db, inmem):
+@@ -48,6 +48,6 @@ if __name__ == "__main__":
+     argv = sys.argv
+     union_list = []
+     database_name = argv[1]
+-    brl_db = wdb.WDB(database_name, "fml.g")
++    brl_db = Database(database_name, "fml.g")
+     myObject = rounded_rcc(brl_db)
+     myObject.create(50, 220, 21)
+\ No newline at end of file
+diff --git a/examples/draw_primitive.py b/examples/draw_primitive.py
+index fac79c1..1326255 100644
+--- a/examples/draw_primitive.py
++++ b/examples/draw_primitive.py
+@@ -2,7 +2,7 @@ import sys
+ 
+ from brlcad.primitives import union
+ 
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ 
+ def draw_sphere(primitive_name, arguments, brl_db):
+ 	center = [float(x) for x in arguments[:3]]
+diff --git a/examples/hilbert_2d.py b/examples/hilbert_2d.py
+index 3b3d669..89d1772 100644
+--- a/examples/hilbert_2d.py
++++ b/examples/hilbert_2d.py
+@@ -2,7 +2,7 @@
+ Fractal pipes :-)
+ """
+ from brlcad.vmath import Vector
+-import brlcad.wdb as wdb
++from brlcad.geometry import Database
+ import sys
+ 
+ 
+diff --git a/examples/hilbert_3d.py b/examples/hilbert_3d.py
+index 97fcabe..2a6fef0 100644
+--- a/examples/hilbert_3d.py
++++ b/examples/hilbert_3d.py
+@@ -2,7 +2,7 @@
+ 3D Hilbert space filling curve with pipes.
+ """
+ from brlcad.vmath import Vector
+-import brlcad.wdb as wdb
++from brlcad.geometry import Database
+ import sys
+ 
+ 
+diff --git a/examples/script.py b/examples/script.py
+index 7091496..37914ff 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -30,7 +30,7 @@ import argparse
+ import errno
+ import sys
+ import os
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ from proc_interpreter import Procedure
+ from arithematic_parser import *
+ from brlcad.primitives import *
+@@ -566,6 +566,6 @@ if __name__ == "__main__":
+ 	database_name = ' '.join(commands[0].split()[1:])
+ 	units = commands[1].split()[1]
+ 	commands = commands[2:]
+-	brl_db = wdb.WDB(database_name, "db.g")
++	brl_db = geometry.Database(database_name, "db.g")
+ 	parse_script(database_name, units, commands)
+ 
+diff --git a/examples/sgi.py b/examples/sgi.py
+index 9e97bb0..e8ec03e 100644
+--- a/examples/sgi.py
++++ b/examples/sgi.py
+@@ -11,7 +11,7 @@ To Render :
+ import sys
+ from brlcad.primitives import union
+ from draw_primitive import *
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ 
+ def right(a, b, rcc_name, sph_name):
+     global x
+@@ -63,7 +63,7 @@ if __name__ == "__main__":
+     i, j, radius = 1000, 800, 100
+     # starting position
+     x, y, z = 0, 0, 0
+-    brl_db = wdb.WDB(database_name, "SGI.g")
++    brl_db = geometry.Database(database_name, "SGI.g")
+     forward_list, back_list = [100, 107, 114], [105, 109, 116]
+     up_list, down_list      = [104, 111, 115], [102, 106, 113]
+     right_list, left_list   = [103, 110, 117], [101, 108, 112]
+diff --git a/examples/wdb_example.py b/examples/wdb_example.py
+index 1b002a3..43aa440 100644
+--- a/examples/wdb_example.py
++++ b/examples/wdb_example.py
+@@ -30,10 +30,10 @@ import sys
+ 
+ from brlcad.primitives import union
+ 
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ 
+ def main(argv):
+-    with wdb.WDB(argv[1], "My Database") as brl_db:
++    with geometry.Database(argv[1], "My Database") as brl_db:
+ 
+         # All units in the database file are stored in millimeters. This constrains
+         # the arguments to the mk_* routines to also be in millimeters.
+diff --git a/examples/wdb_globe.py b/examples/wdb_globe.py
+index 8d49867..bc08a6a 100644
+--- a/examples/wdb_globe.py
++++ b/examples/wdb_globe.py
+@@ -15,7 +15,7 @@ python attribution:
+ """
+ 
+ import argparse
+-import brlcad.wdb as wdb
++from brlcad.geometry import Database
+ from brlcad.primitives import subtract, union
+ 
+ 
+diff --git a/examples/wdb_primitives.py b/examples/wdb_primitives.py
+index 8d2f91f..e1c3282 100644
+--- a/examples/wdb_primitives.py
++++ b/examples/wdb_primitives.py
+@@ -1,5 +1,5 @@
+ from brlcad.vmath import Transform
+-import brlcad.wdb as wdb
++from brlcad.geometry import Database
+ from brlcad import primitives
+ 
+ if __name__ == "__main__":
+diff --git a/tests/test_bot.py b/tests/test_bot.py
+index e56c0cb..f71e482 100644
+--- a/tests/test_bot.py
++++ b/tests/test_bot.py
+@@ -1,7 +1,7 @@
+ import os
+ import unittest
+ from brlcad.primitives import bot
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ 
+ 
+ class BOTTestCase(unittest.TestCase):
+@@ -15,10 +15,10 @@ class BOTTestCase(unittest.TestCase):
+         # create the test DB:
+         if os.path.isfile(cls.TEST_FILE_NAME):
+             os.remove(cls.TEST_FILE_NAME)
+-        with wdb.WDB(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
++        with geometry.Database(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
+             brl_db.bot("bot.s")
+         # load the DB and cache it in a class variable:
+-        cls.brl_db = wdb.WDB(cls.TEST_FILE_NAME)
++        cls.brl_db = geometry.Database(cls.TEST_FILE_NAME)
+ 
+     @classmethod
+     def tearDownClass(cls):
+diff --git a/tests/test_sketch.py b/tests/test_sketch.py
+index 7b9faab..48bb6fa 100644
+--- a/tests/test_sketch.py
++++ b/tests/test_sketch.py
+@@ -3,7 +3,7 @@ import unittest
+ import math
+ from brlcad.primitives import Sketch
+ 
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ 
+ 
+ class SketchTestCase(unittest.TestCase):
+@@ -17,10 +17,10 @@ class SketchTestCase(unittest.TestCase):
+         # create the test DB:
+         if os.path.isfile(cls.TEST_FILE_NAME):
+             os.remove(cls.TEST_FILE_NAME)
+-        with wdb.WDB(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
++        with Database(cls.TEST_FILE_NAME, "BRL-CAD geometry for testing sketch primitive") as brl_db:
+             brl_db.sketch("sketch.s")
+         # load the DB and cache it in a class variable:
+-        cls.brl_db = wdb.WDB(cls.TEST_FILE_NAME)
++        cls.brl_db = geometry.Database(cls.TEST_FILE_NAME)
+ 
+     @classmethod
+     def tearDownClass(cls):
+diff --git a/tests/test_wdb.py b/tests/test_wdb.py
+index 0913354..f021e21 100644
+--- a/tests/test_wdb.py
++++ b/tests/test_wdb.py
+@@ -4,7 +4,7 @@ import unittest
+ from brlcad.vmath import Vector, Transform
+ import numpy as np
+ import brlcad._bindings.libwdb as libwdb
+-import brlcad.wdb as wdb
++import brlcad.geometry as geometry
+ import brlcad.ctypes_adaptors as cta
+ import brlcad.primitives as primitives
+ 
+@@ -16,7 +16,7 @@ class WDBTestCase(unittest.TestCase):
+         # create the test DB:
+         if os.path.isfile("test_defaults.g"):
+             os.remove("test_defaults.g")
+-        with wdb.WDB("test_defaults.g", "BRL-CAD geometry for testing wdb defaults") as brl_db:
++        with Database("test_defaults.g", "BRL-CAD geometry for testing wdb defaults") as brl_db:
+             brl_db.sphere("sphere.s")
+             brl_db.rpp("rpp.s")
+             brl_db.wedge("wedge.s")
+@@ -58,7 +58,7 @@ class WDBTestCase(unittest.TestCase):
+                 test_comb.tree.add_child(shape_name)
+             brl_db.save(test_comb)
+         # load the DB and cache it in a class variable:
+-        cls.brl_db = wdb.WDB("test_defaults.g")
++        cls.brl_db = geometry.Database("test_defaults.g")
+ 
+     @classmethod
+     def tearDownClass(cls):
+@@ -313,10 +313,10 @@ class WDBTestCase(unittest.TestCase):
+         if os.path.isfile(db_name):
+             os.remove(db_name)
+         # first time the DB is created:
+-        with wdb.WDB(db_name) as empty_db:
++        with Database(db_name) as empty_db:
+             self.check_empty_db(empty_db)
+         # second time the DB exists and it is re-opened:
+-        with wdb.WDB(db_name) as empty_db:
++        with Database(db_name) as empty_db:
+             self.check_empty_db(empty_db)
+ 
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 200f8223a156f482c46fc36acc96580a5946753c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Mon, 30 Jul 2018 18:51:26 +0530
+Subject: [PATCH 34/47] Basic Tutorials added. Missing documentation:
+
+---
+ Tutorial/abstract_tutorial.py | 144 +++++++++++++++++++++++++++++
+ Tutorial/core_tutorial.py     | 205 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 349 insertions(+)
+ create mode 100644 Tutorial/abstract_tutorial.py
+ create mode 100644 Tutorial/core_tutorial.py
+
+diff --git a/Tutorial/abstract_tutorial.py b/Tutorial/abstract_tutorial.py
+new file mode 100644
+index 0000000..7ca9cf1
+--- /dev/null
++++ b/Tutorial/abstract_tutorial.py
+@@ -0,0 +1,144 @@
++from brlcad.procedural import *
++import brlcad.geometry as geometry
++
++def main():
++	'''
++	Given below are examples of drawing primitives using the abstract method
++
++	All the draw_primitive function follow a similar syntax :
++
++		draw_primitveName(primitive_name, [list_of_arguments], db_name)
++
++	'''
++
++	draw_sphere('sph.s', [1, 2, 3, 0.75], brl_db)
++	
++	draw_rpp('rpp.s', [0, 0, 0, 2, 4, 2.5], brl_db)
++	
++	draw_wedge('wedge.s', [0, 0, 3.5, 
++						   0, 1, 0, 
++						   0, 0, 1, 
++						   4, 2, 1, 
++						   3], brl_db)
++	
++	draw_arb4('arb4.s', [-1, -5, 3, 
++						  1, -5, 3, 
++						  1, -3, 4, 
++						  0, -4, 5], brl_db)
++
++	draw_arb5('arb5.s', [-1, -5, 0, 
++						  1, -5, 0, 
++						  1, -3, 0, 
++						  -1, -3, 0, 
++						  0, -4, 3], brl_db)
++	
++	draw_arb6('arb6.s', [-1, -2.5, 0, 1, 
++						-2.5, 0, 1, -0.5, 
++						0, -1, -0.5, 0, 
++						0, -2.5, 2.5, 
++						0, -0.5, 2.5], brl_db)
++	
++	draw_arb7('arb7.s', [-1, -2.5, 3, 
++						  1, -2.5, 3, 
++						  1, -0.5, 3, 
++						  -1, -1.5, 3, 
++						  -1, -2.5, 5,
++						  1, -2.5, 5,
++						  1, -1.5, 5], brl_db)
++	
++	draw_arb8('arb8.s', [-1, -1, 5, 
++						  1, -1, 5, 
++						  1, 1, 5, 
++						  -1, 1, 5,
++                		  -0.5, -0.5, 6.5, 
++                		  0.5, -0.5, 6.5, 
++                		  0.5, 0.5, 6.5, 
++                		  -0.5, 0.5, 6.5], brl_db)
++	
++	draw_ellipsoid('ellipsoid.s', [0, -4, 6,
++								   0.75, 0, 0,
++								   0, 1, 0,
++								   0, 0, 0.5], brl_db)
++	
++	draw_torus('torus.s', [0, -2, 6,
++						   0, 0, 1, 
++						   1, 0.25], brl_db)
++
++	draw_rcc('rcc.s', [1, 2, 5,
++					   0, 0, 1,
++					   1], brl_db)
++	
++	draw_tgc('tgc.s', [0, -5, 7,
++					   0, 0, 1,
++					   0.5, 0, 0,
++					   0, 1, 0,
++					   1, 0, 0,
++					   0, 0.5, 0], brl_db)
++
++	draw_cone('cone.s', [0, -2, 7,
++						 0, 0, 2,
++						 0.5, 1.25, 0.75], brl_db)
++
++	draw_trc('trc.s', [0, -2, 7.5,
++					   0, 0, 0.5,
++					   0.75, 1.25], brl_db)
++	
++	draw_rpc('rpc.s', [0, -2, 8.5,
++					   0, 0, 0.5,
++					   0.25, 0.25, 0,
++					   0.75], brl_db)
++	
++	draw_rhc('rhc.s',[0, -2, 9,
++					  0, 0, 0.5,
++					  0.25, 0.25, 0,
++					  0.75, 0.1], brl_db)
++	
++	draw_epa('epa.s', [1, 2, 7,
++					   0, 0, -1,
++					   1, 0, 0,
++					   1, 0.5], brl_db)
++	
++	draw_ehy('ehy.s', [1, 2, 7,
++					   0, 0, 1,
++					   1, 0, 0,
++					   1, 0.5, 0.1], brl_db)
++	
++	draw_hyperboloid('hyperbolid.s', [0, 0, 6.75,
++									  0, 0, 0.75,
++									  1, 0, 0,
++									  0.5, 0.3], brl_db)
++	
++	draw_eto('eto.s', [1, 2, 8.5,
++					   0, 0, 1,
++					   0.5, 0, 0.5,
++					   1, 0.25], brl_db)
++	
++	draw_arbn('arbn.s', [0, 0, -1, -8,
++						 0, 0, 1, 9,
++						 -1, 0, 0, 0.5,
++						 1, 0, 0, 0.5,
++						 0, -1, 0, 0.5,
++						 0, 1, 0, 0.5], brl_db)
++	
++	draw_particle('particle.s', [0, -5, 8.5,
++								 0, 0, 0.75,
++								 0.25, 0.5], brl_db)
++	
++	draw_pipe('pips.s',[0.55, 4, 5.45, 0.1, 0, 0.45,
++                0.55, 3.55, 5.4875, 0.1, 0, 0.45,
++                1.45, 3.55, 5.5625, 0.1, 0, 0.45,
++                1.45, 4.45, 5.6375, 0.1, 0, 0.45,
++                0.55, 4.45, 5.7125, 0.1, 0, 0.45,
++                0.55, 3.55, 5.7875, 0.1, 0, 0.45,
++                1.45, 3.55, 5.8625, 0.1, 0, 0.45,
++                1.45, 4.45, 5.9375, 0.1, 0, 0.45,
++                0.55, 4.45, 6.0125, 0.1, 0, 0.45,
++                0.55, 4, 6.05, 0.1, 0, 0.45], brl_db)
++
++	return
++
++if __name__ == '__main__':
++	argv = sys.argv
++	database_name = argv[1]
++	brl_db = geometry.Database(database_name, "SGI.g")
++	main()
+\ No newline at end of file
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+new file mode 100644
+index 0000000..a26e091
+--- /dev/null
++++ b/Tutorial/core_tutorial.py
+@@ -0,0 +1,205 @@
++from brlcad.vmath import Transform
++from brlcad.geometry import Database
++from brlcad import primitives
++
++if __name__ == "__main__":
++    with Database("test_wdb.g", "Test BRLCAD DB file") as brl_db:
++        brl_db.sphere(
++            "sph1.s",
++            center=(1, 2, 3),
++            radius=0.75
++        )
++        brl_db.rpp(
++            "box1.s",
++            pmin=(0, 0, 0),
++            pmax=(2, 4, 2.5)
++        )
++        brl_db.wedge(
++            "wedge1.s",
++            vertex=(0, 0, 3.5),
++            x_dir=(0, 1, 0),
++            z_dir=(0, 0, 1),
++            x_len=4, y_len=2, z_len=1,
++            x_top_len=3
++        )
++        brl_db.arb4(
++            "arb4.s",
++            points=[(-1, -5, 3), (1, -5, 3), (1, -3, 4), (0, -4, 5)]
++        )
++        brl_db.arb5(
++            "arb5.s",
++            points=[(-1, -5, 0), (1, -5, 0), (1, -3, 0), (-1, -3, 0), (0, -4, 3)]
++        )
++        brl_db.arb6(
++            "arb6.s",
++            points=[(-1, -2.5, 0), (1, -2.5, 0), (1, -0.5, 0), (-1, -0.5, 0), (0, -2.5, 2.5), (0, -0.5, 2.5)]
++        )
++        brl_db.arb7(
++            "arb7.s",
++            points=[(-1, -2.5, 3), (1, -2.5, 3), (1, -0.5, 3), (-1, -1.5, 3), (-1, -2.5, 5), (1, -2.5, 5), (1, -1.5, 5)]
++        )
++        brl_db.arb8(
++            "arb8.s",
++            points=[
++                (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
++                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
++            ]
++        )
++        brl_db.ellipsoid(
++            "ellipsoid.s",
++            center=(0, -4, 6),
++            a=(0.75, 0, 0),
++            b=(0, 1, 0),
++            c=(0, 0, 0.5)
++        )
++        brl_db.torus(
++            "torus.s",
++            center=(0, -2, 6),
++            n=(0, 0, 1),
++            r_revolution=1,
++            r_cross=0.25
++        )
++        brl_db.rcc(
++            "rcc.s",
++            base=(1, 2, 5),
++            height=(0, 0, 1),
++            radius=1
++        )
++        brl_db.tgc(
++            "tgc.s",
++            base=(0, -5, 7),
++            height=(0, 0, 1),
++            a=(0.5, 0, 0),
++            b=(0, 1, 0),
++            c=(1, 0, 0),
++            d=(0, 0.5, 0)
++        )
++        brl_db.cone(
++            "cone.s",
++            base=(0, -2, 7),
++            n=(0, 0, 2),
++            h=0.5,
++            r_base=1.25,
++            r_top=0.75
++        )
++        brl_db.trc(
++            "trc.s",
++            base=(0, -2, 7.5),
++            height=(0, 0, 0.5),
++            r_base=0.75,
++            r_top=1.25
++        )
++        brl_db.rpc(
++            "rpc.s",
++            base=(0, -2, 8.5),
++            height=(0, 0, 0.5),
++            breadth=(0.25, 0.25, 0),
++            half_width=0.75
++        )
++        brl_db.rhc(
++            "rhc.s",
++            base=(0, -2, 9),
++            height=(0, 0, 0.5),
++            breadth=(0.25, 0.25, 0),
++            half_width=0.75,
++            asymptote=0.1
++        )
++        brl_db.epa(
++            "epa.s",
++            base=(1, 2, 7),
++            height=(0, 0, -1),
++            n_major=(1, 0, 0),
++            r_major=1,
++            r_minor=0.5
++        )
++        brl_db.ehy(
++            "ehy.s",
++            base=(1, 2, 7),
++            height=(0, 0, 1),
++            n_major=(1, 0, 0),
++            r_major=1, r_minor=0.5,
++            asymptote=0.1
++        )
++        brl_db.hyperboloid(
++            "hyperboloid.s",
++            base=(0, 0, 6.75),
++            height=(0, 0, 0.75),
++            a_vec=(1, 0, 0),
++            b_mag=0.5,
++            base_neck_ratio=0.3
++        )
++        brl_db.eto(
++            "eto.s",
++            center=(1, 2, 8.5),
++            n=(0, 0, 1),
++            s_major=(0.5, 0, 0.5),
++            r_revolution=1,
++            r_minor=0.25
++        )
++        brl_db.arbn(
++            "arbn.s",
++            planes=[
++                [(0, 0, -1), -8],
++                [(0, 0, 1), 9],
++                [(-1, 0, 0), 0.5],
++                [(1, 0, 0), 0.5],
++                [(0, -1, 0), 0.5],
++                [(0, 1, 0), 0.5],
++            ]
++        )
++        brl_db.particle(
++            "particle.s",
++            base=(0, -5, 8.5),
++            height=(0, 0, 0.75),
++            r_base=0.25,
++            r_end=0.5
++        )
++        brl_db.pipe(
++            "pipe.s",
++            points=[
++                [(0.55, 4, 5.45), 0.1, 0, 0.45],
++                [(0.55, 3.55, 5.4875), 0.1, 0, 0.45],
++                [(1.45, 3.55, 5.5625), 0.1, 0, 0.45],
++                [(1.45, 4.45, 5.6375), 0.1, 0, 0.45],
++                [(0.55, 4.45, 5.7125), 0.1, 0, 0.45],
++                [(0.55, 3.55, 5.7875), 0.1, 0, 0.45],
++                [(1.45, 3.55, 5.8625), 0.1, 0, 0.45],
++                [(1.45, 4.45, 5.9375), 0.1, 0, 0.45],
++                [(0.55, 4.45, 6.0125), 0.1, 0, 0.45],
++                [(0.55, 4, 6.05), 0.1, 0, 0.45],
++            ]
++        )
++        brl_db.region(
++            name="all.r",
++            tree=(
++                "sph1.s",
++                "box1.s",
++                "wedge1.s",
++                "arb4.s",
++                "arb5.s",
++                "arb6.s",
++                "arb7.s",
++                "arb8.s",
++                "ellipsoid.s",
++                "torus.s",
++                "rcc.s",
++                "tgc.s",
++                "cone.s",
++                "trc.s",
++                "rpc.s",
++                "rhc.s",
++                "epa.s",
++                "ehy.s",
++                "hyperboloid.s",
++                "eto.s",
++                primitives.leaf("arbn.s", Transform.translation(1, 0, 0)),
++                "particle.s",
++                "pipe.s",
++            ),
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(64, 180, 96)
++        )
++
++    with Database("test_wdb.g") as brl_db:
++        for x in brl_db.ls():
++            print brl_db.lookup(x)
+-- 
+2.14.3 (Apple Git-98)
+
+
+From b5e16e2fae691c0add43a7bc2e2debacf94ee380 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh Goud <jaipal.singh@research.iiit.ac.in>
+Date: Tue, 31 Jul 2018 14:10:16 +0530
+Subject: [PATCH 35/47] Moving files.
+
+---
+ examples/wdb_primitives.py | 205 ---------------------------------------------
+ 1 file changed, 205 deletions(-)
+ delete mode 100644 examples/wdb_primitives.py
+
+diff --git a/examples/wdb_primitives.py b/examples/wdb_primitives.py
+deleted file mode 100644
+index e1c3282..0000000
+--- a/examples/wdb_primitives.py
++++ /dev/null
+@@ -1,205 +0,0 @@
+-from brlcad.vmath import Transform
+-from brlcad.geometry import Database
+-from brlcad import primitives
+-
+-if __name__ == "__main__":
+-    with WDB("test_wdb.g", "Test BRLCAD DB file") as brl_db:
+-        brl_db.sphere(
+-            "sph1.s",
+-            center=(1, 2, 3),
+-            radius=0.75
+-        )
+-        brl_db.rpp(
+-            "box1.s",
+-            pmin=(0, 0, 0),
+-            pmax=(2, 4, 2.5)
+-        )
+-        brl_db.wedge(
+-            "wedge1.s",
+-            vertex=(0, 0, 3.5),
+-            x_dir=(0, 1, 0),
+-            z_dir=(0, 0, 1),
+-            x_len=4, y_len=2, z_len=1,
+-            x_top_len=3
+-        )
+-        brl_db.arb4(
+-            "arb4.s",
+-            points=[(-1, -5, 3), (1, -5, 3), (1, -3, 4), (0, -4, 5)]
+-        )
+-        brl_db.arb5(
+-            "arb5.s",
+-            points=[(-1, -5, 0), (1, -5, 0), (1, -3, 0), (-1, -3, 0), (0, -4, 3)]
+-        )
+-        brl_db.arb6(
+-            "arb6.s",
+-            points=[(-1, -2.5, 0), (1, -2.5, 0), (1, -0.5, 0), (-1, -0.5, 0), (0, -2.5, 2.5), (0, -0.5, 2.5)]
+-        )
+-        brl_db.arb7(
+-            "arb7.s",
+-            points=[(-1, -2.5, 3), (1, -2.5, 3), (1, -0.5, 3), (-1, -1.5, 3), (-1, -2.5, 5), (1, -2.5, 5), (1, -1.5, 5)]
+-        )
+-        brl_db.arb8(
+-            "arb8.s",
+-            points=[
+-                (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
+-                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
+-            ]
+-        )
+-        brl_db.ellipsoid(
+-            "ellipsoid.s",
+-            center=(0, -4, 6),
+-            a=(0.75, 0, 0),
+-            b=(0, 1, 0),
+-            c=(0, 0, 0.5)
+-        )
+-        brl_db.torus(
+-            "torus.s",
+-            center=(0, -2, 6),
+-            n=(0, 0, 1),
+-            r_revolution=1,
+-            r_cross=0.25
+-        )
+-        brl_db.rcc(
+-            "rcc.s",
+-            base=(1, 2, 5),
+-            height=(0, 0, 1),
+-            radius=1
+-        )
+-        brl_db.tgc(
+-            "tgc.s",
+-            base=(0, -5, 7),
+-            height=(0, 0, 1),
+-            a=(0.5, 0, 0),
+-            b=(0, 1, 0),
+-            c=(1, 0, 0),
+-            d=(0, 0.5, 0)
+-        )
+-        brl_db.cone(
+-            "cone.s",
+-            base=(0, -2, 7),
+-            n=(0, 0, 2),
+-            h=0.5,
+-            r_base=1.25,
+-            r_top=0.75
+-        )
+-        brl_db.trc(
+-            "trc.s",
+-            base=(0, -2, 7.5),
+-            height=(0, 0, 0.5),
+-            r_base=0.75,
+-            r_top=1.25
+-        )
+-        brl_db.rpc(
+-            "rpc.s",
+-            base=(0, -2, 8.5),
+-            height=(0, 0, 0.5),
+-            breadth=(0.25, 0.25, 0),
+-            half_width=0.75
+-        )
+-        brl_db.rhc(
+-            "rhc.s",
+-            base=(0, -2, 9),
+-            height=(0, 0, 0.5),
+-            breadth=(0.25, 0.25, 0),
+-            half_width=0.75,
+-            asymptote=0.1
+-        )
+-        brl_db.epa(
+-            "epa.s",
+-            base=(1, 2, 7),
+-            height=(0, 0, -1),
+-            n_major=(1, 0, 0),
+-            r_major=1,
+-            r_minor=0.5
+-        )
+-        brl_db.ehy(
+-            "ehy.s",
+-            base=(1, 2, 7),
+-            height=(0, 0, 1),
+-            n_major=(1, 0, 0),
+-            r_major=1, r_minor=0.5,
+-            asymptote=0.1
+-        )
+-        brl_db.hyperboloid(
+-            "hyperboloid.s",
+-            base=(0, 0, 6.75),
+-            height=(0, 0, 0.75),
+-            a_vec=(1, 0, 0),
+-            b_mag=0.5,
+-            base_neck_ratio=0.3
+-        )
+-        brl_db.eto(
+-            "eto.s",
+-            center=(1, 2, 8.5),
+-            n=(0, 0, 1),
+-            s_major=(0.5, 0, 0.5),
+-            r_revolution=1,
+-            r_minor=0.25
+-        )
+-        brl_db.arbn(
+-            "arbn.s",
+-            planes=[
+-                [(0, 0, -1), -8],
+-                [(0, 0, 1), 9],
+-                [(-1, 0, 0), 0.5],
+-                [(1, 0, 0), 0.5],
+-                [(0, -1, 0), 0.5],
+-                [(0, 1, 0), 0.5],
+-            ]
+-        )
+-        brl_db.particle(
+-            "particle.s",
+-            base=(0, -5, 8.5),
+-            height=(0, 0, 0.75),
+-            r_base=0.25,
+-            r_end=0.5
+-        )
+-        brl_db.pipe(
+-            "pipe.s",
+-            points=[
+-                [(0.55, 4, 5.45), 0.1, 0, 0.45],
+-                [(0.55, 3.55, 5.4875), 0.1, 0, 0.45],
+-                [(1.45, 3.55, 5.5625), 0.1, 0, 0.45],
+-                [(1.45, 4.45, 5.6375), 0.1, 0, 0.45],
+-                [(0.55, 4.45, 5.7125), 0.1, 0, 0.45],
+-                [(0.55, 3.55, 5.7875), 0.1, 0, 0.45],
+-                [(1.45, 3.55, 5.8625), 0.1, 0, 0.45],
+-                [(1.45, 4.45, 5.9375), 0.1, 0, 0.45],
+-                [(0.55, 4.45, 6.0125), 0.1, 0, 0.45],
+-                [(0.55, 4, 6.05), 0.1, 0, 0.45],
+-            ]
+-        )
+-        brl_db.region(
+-            name="all.r",
+-            tree=(
+-                "sph1.s",
+-                "box1.s",
+-                "wedge1.s",
+-                "arb4.s",
+-                "arb5.s",
+-                "arb6.s",
+-                "arb7.s",
+-                "arb8.s",
+-                "ellipsoid.s",
+-                "torus.s",
+-                "rcc.s",
+-                "tgc.s",
+-                "cone.s",
+-                "trc.s",
+-                "rpc.s",
+-                "rhc.s",
+-                "epa.s",
+-                "ehy.s",
+-                "hyperboloid.s",
+-                "eto.s",
+-                primitives.leaf("arbn.s", Transform.translation(1, 0, 0)),
+-                "particle.s",
+-                "pipe.s",
+-            ),
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(64, 180, 96)
+-        )
+-
+-    with WDB("test_wdb.g") as brl_db:
+-        for x in brl_db.ls():
+-            print brl_db.lookup(x)
+-- 
+2.14.3 (Apple Git-98)
+
+
+From a3f2bb344958e2f0ad6b816c389a61e8154e0937 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 31 Jul 2018 20:32:33 +0530
+Subject: [PATCH 36/47] Big Scene Completed with Half
+
+---
+ Tutorial/abstract_tutorial.py |  2 ++
+ Tutorial/core_tutorial.py     | 11 +++++++----
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/Tutorial/abstract_tutorial.py b/Tutorial/abstract_tutorial.py
+index 7ca9cf1..e837136 100644
+--- a/Tutorial/abstract_tutorial.py
++++ b/Tutorial/abstract_tutorial.py
+@@ -135,6 +135,8 @@ def main():
+                 0.55, 4.45, 6.0125, 0.1, 0, 0.45,
+                 0.55, 4, 6.05, 0.1, 0, 0.45], brl_db)
+ 
++	draw_half('half.s', [0, 1, 0, 0], brl_db)
++
+ 	return
+ 
+ if __name__ == '__main__':
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index a26e091..f83e586 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -169,6 +169,13 @@ if __name__ == "__main__":
+                 [(0.55, 4, 6.05), 0.1, 0, 0.45],
+             ]
+         )
++
++        brl_db.half(
++            "half.s",
++            norm = (0, 0, 1), 
++            d = -1
++        )
++        
+         brl_db.region(
+             name="all.r",
+             tree=(
+@@ -199,7 +206,3 @@ if __name__ == "__main__":
+             shader="plastic {di .8 sp .2}",
+             rgb_color=(64, 180, 96)
+         )
+-
+-    with Database("test_wdb.g") as brl_db:
+-        for x in brl_db.ls():
+-            print brl_db.lookup(x)
+
+-- 
+diff --git a/brlcad/primitives/rec.py b/brlcad/primitives/rec.py
+new file mode 100644
+index 0000000..4df56f3
+--- /dev/null
++++ b/brlcad/primitives/rec.py
+@@ -0,0 +1,53 @@
++"""
++Python wrappers for the REC primtive of BRL-CAD.
++"""
++
++from base import Primitive
++from brlcad.vmath import Vector
++import numpy as np
++
++
++class RPC(Primitive):
++
++    def __init__(self, name, base=(0, 0, 0), height=(-1, 0, 0), breadth=(0, 0, 1), half_width=0.5, copy=False):
++        Primitive.__init__(self, name=name)
++        self.base = Vector(base, copy=copy)
++        self.height = Vector(height, copy=copy)
++        self.breadth = Vector(breadth, copy=copy)
++        self.half_width = half_width
++
++    def __repr__(self):
++        return "{}({}, base={}, height={}, breadth={}, half_width={})".format(
++            self.__class__.__name__, self.name, repr(self.base),
++            repr(self.height), repr(self.breadth), self.half_width
++        )
++
++    def update_params(self, params):
++        params.update({
++            "base": self.base,
++            "height": self.height,
++            "breadth": self.breadth,
++            "half_width": self.half_width,
++        })
++
++    def copy(self):
++        return RPC(self.name, base=self.base, height=self.height,
++                   breadth=self.breadth, half_width=self.half_width, copy=True)
++
++    def has_same_data(self, other):
++        if not np.allclose(self.half_width, other.half_width):
++            return False
++        self_vectors = (self.base, self.height, self.breadth)
++        other_vectors = (other.base, other.height, other.breadth)
++        return all(map(Vector.is_same, self_vectors, other_vectors))
++
++    @staticmethod
++    def from_wdb(name, data):
++        return RPC(
++            name=name,
++            base=data.rpc_V,
++            height=data.rpc_H,
++            breadth=data.rpc_B,
++            half_width=data.rpc_r,
++        )
++
+diff --git a/brlcad/procedural.py b/brlcad/procedural.py
+new file mode 100644
+index 0000000..5c34bba
+--- /dev/null
++++ b/brlcad/procedural.py
+@@ -0,0 +1,242 @@
++import sys
++from brlcad.primitives import union
++
++def draw_sphere(primitive_name, arguments, brl_db):
++	center = [float(x) for x in arguments[:3]]
++	radius = float(arguments[3])
++	brl_db.sphere(primitive_name, center, radius)
++	return
++
++def draw_rpp(primitive_name, arguments, brl_db):
++	pmin = [float(x) for x in arguments[:3]]
++	pmax = [float(x) for x in arguments[3:]]
++	brl_db.rpp(primitive_name, pmin, pmax)
++	return
++
++def draw_wedge(primitive_name, arguments, brl_db):
++	vertex = [float(x) for x in arguments[:3]]
++	x_dir  = [float(x) for x in arguments[3:6]]
++	z_dir  = [float(x) for x in arguments[6:9]]
++	x_len, y_len, z_len, x_top_len = arguments[9:]
++	brl_db.wedge(primitive_name, vertex, x_dir, z_dir,
++				 x_len, y_len, z_len, x_top_len)
++	return
++
++def draw_arb4(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:]]
++	brl_db.arb4(primitive_name, [v1, v2, v3, v4])
++	return
++
++def draw_arb5(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:]]
++	brl_db.arb5(primitive_name, [v1, v2, v3, v4, v5])
++	return
++
++def draw_arb6(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:]]
++	brl_db.arb6(primitive_name, [v1, v2, v3, v4, v5, v6])
++	return
++
++def draw_arb7(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:18]]
++	v7 = [float(x) for x in arguments[18:]]	
++	brl_db.arb7(primitive_name, [v1, v2, v3, v4, v5, v6, v7])
++	return
++
++def draw_arb8(primitive_name, arguments, brl_db):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:18]]
++	v7 = [float(x) for x in arguments[18:21]]
++	v8 = [float(x) for x in arguments[21:]]
++	brl_db.arb8(primitive_name, [v1, v2, v3, v4, v5, v6, v7, v8])
++	return
++
++def draw_ellipsoid(primitive_name, arguments, brl_db):
++	center = [float(x) for x in arguments[:3]]
++	a	  = [float(x) for x in arguments[3:6]]
++	b	  = [float(x) for x in arguments[6:9]]
++	c	  = [float(x) for x in arguments[9:]]
++	brl_db.ellipsoid(primitive_name, center, a, b, c)
++	return
++
++def draw_torus(primitive_name, arguments, brl_db):
++	center = [float(x) for x in arguments[:3]]
++	n	  = [float(x) for x in arguments[3:6]]
++	r_revolution = float(arguments[6])
++	r_cross	  = float(arguments[7])
++	brl_db.torus(primitive_name, center, n,
++				 r_revolution, r_cross)
++	return
++
++def draw_rcc(primitive_name, arguments, brl_db):
++	base   = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	radius = arguments[6]
++	brl_db.rcc(primitive_name, base, height, radius)
++	return
++
++def draw_tgc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	a = [float(x) for x in arguments[6:9]]
++	b = [float(x) for x in arguments[9:12]]
++	c = [float(x) for x in arguments[12:15]]
++	d = [float(x) for x in arguments[15:]]
++	brl_db.tgc(primitive_name, base, height, a, b, c, d)
++	return
++
++def draw_cone(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	n	= [float(x) for x in arguments[3:6]]
++	h, r_base, r_top = [float(x) for x in arguments[6:]]
++	brl_db.cone(primitive_name, base, n, h, r_base, r_top)
++	return
++
++def draw_trc(primitive_name, arguments, brl_db):
++	print(arguments)
++	print(len(arguments))
++	print("DEBUG")
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	r_base, r_top = [float(x) for x in arguments[6:]]
++	brl_db.trc(primitive_name, base, height, r_base, r_top)
++	return
++
++def draw_rpc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	breadth = [float(x) for x in arguments[6:9]]
++	half_width = arguments[9]
++	brl_db.rpc(primitive_name, base, height, breadth, half_width)
++	return
++
++def draw_rhc(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	breadth = [float(x) for x in arguments[6:9]]
++	half_width, asymptote = [float(x) for x in arguments[9:]]
++	brl_db.rhc(primitive_name, base, height, breadth, half_width, asymptote)
++	return
++
++def draw_epa(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	n_major = [float(x) for x in arguments[6:9]]
++	r_major, r_minor = [float(x) for x in arguments[9:]]
++	brl_db.epa(primitive_name, base, height, n_major, r_major, r_minor)
++	return
++
++def draw_ehy(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	n_major = [float(x) for x in arguments[6:9]]
++	r_major, r_minor, asymptote = [float(x) for x in arguments[9:]]
++	brl_db.ehy(primitive_name, base, height, n_major,
++			   r_major, r_minor, asymptote)
++	return
++
++def draw_hyperboloid(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	a = [float(x) for x in arguments[6:9]]
++	b_mag, base_neck_ratio = [float(x) for x in arguments[9:]]
++	brl_db.hyperboloid(primitive_name, base, height, a,
++					   b_mag, base_neck_ratio)
++	return
++
++def draw_eto(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	n = [float(x) for x in arguments[3:6]]
++	s_major = [float(x) for x in arguments[6:9]]
++	r_revolution, r_minor = [float(x) for x in arguments[9:]]
++	brl_db.eto(primitive_name, base, n, s_major,
++			   r_revolution, r_minor)
++	return
++
++def draw_arbn(primitive_name, arguments, brl_db):
++	plane_1 = [tuple([float(x) for x in arguments[:3]])]
++	plane_1.append(float(arguments[3]))
++	plane_2 = [tuple([float(x) for x in arguments[4:7]])]
++	plane_2.append(float(arguments[7]))
++	plane_3 = [tuple([float(x) for x in arguments[8:11]])]
++	plane_3.append(float(arguments[11]))
++	plane_4 = [tuple([float(x) for x in arguments[12:15]])]
++	plane_4.append(float(arguments[15]))
++	plane_5 = [tuple([float(x) for x in arguments[16:19]])]
++	plane_5.append(float(arguments[19]))
++	plane_6 = [tuple([float(x) for x in arguments[20:23]])]
++	plane_6.append(float(arguments[23]))
++	planes = [plane_1, plane_2, plane_3, plane_4, plane_5, plane_6]
++	brl_db.arbn(primitive_name, planes)
++	return
++
++def draw_particle(primitive_name, arguments, brl_db):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	r_base, r_end = arguments[6:]
++	brl_db.particle(primitive_name, base, height, r_base, r_end)
++	return
++
++def draw_half(primitive_name, arguments, brl_db):
++	normal = [float(x) for x in arguments[:3]]
++	distance = float(arguments[3])
++	brl_db.half(primitive_name, normal, distance)
++	return
++
++def draw_pipe(primitive_name, arguments, brl_db):
++	point_1 = [tuple(float(x) for x in arguments[:3])]
++	for y in range(3):
++		point_1.append(float(arguments[3+y]))
++	point_2 = [tuple(float(x) for x in arguments[6:9])]
++	for y in range(3):
++		point_2.append(float(arguments[9+y]))
++	point_3 = [tuple(float(x) for x in arguments[12:15])]
++	for y in range(3):
++		point_3.append(float(arguments[15+y]))
++	point_4 = [tuple(float(x) for x in arguments[18:21])]
++	for y in range(3):
++		point_4.append(float(arguments[21+y]))
++	point_5 = [tuple(float(x) for x in arguments[24:27])]
++	for y in range(3):
++		point_5.append(float(arguments[27+y]))
++	point_6 = [tuple(float(x) for x in arguments[30:33])]
++	for y in range(3):
++		point_6.append(float(arguments[33+y]))
++	point_7 = [tuple(float(x) for x in arguments[36:39])]
++	for y in range(3):
++		point_7.append(float(arguments[39+y]))
++	point_8 = [tuple(float(x) for x in arguments[42:45])]
++	for y in range(3):
++		point_8.append(float(arguments[45+y]))
++	point_9 = [tuple(float(x) for x in arguments[48:51])]
++	for y in range(3):
++		point_9.append(float(arguments[51+y]))
++	point_10 = [tuple(float(x) for x in arguments[54:57])]
++	for y in range(3):
++		point_10.append(float(arguments[57+y]))
++
++	points = [point_1, point_2, point_3, point_4, point_5, 
++			  point_6, point_7, point_8, point_9, point_10]
++
++	brl_db.pipe(primitive_name, points)
+\ No newline at end of file
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 06415df09a3fa09a129a4444fe9722f80e95357b Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 31 Jul 2018 20:34:46 +0530
+Subject: [PATCH 38/47] Examples updated:
+
+---
+ examples/class_rounded_rcc.py | 2 +-
+ examples/rounded_rcc.py       | 2 +-
+ examples/sgi.py               | 4 +---
+ 3 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/examples/class_rounded_rcc.py b/examples/class_rounded_rcc.py
+index 2a4a118..1eb0e98 100644
+--- a/examples/class_rounded_rcc.py
++++ b/examples/class_rounded_rcc.py
+@@ -4,7 +4,7 @@ Run : python rounded_rcc.py <<db>>.g
+ 
+ import sys
+ from brlcad.primitives import union
+-from draw_primitive import *
++from brlcad.procedural import *
+ from brlcad.geometry import Database
+ 
+ class rounded_rcc():
+diff --git a/examples/rounded_rcc.py b/examples/rounded_rcc.py
+index 77c210e..0f21da5 100644
+--- a/examples/rounded_rcc.py
++++ b/examples/rounded_rcc.py
+@@ -4,7 +4,7 @@ Run : python rounded_rcc.py <<db>>.g
+ 
+ import sys
+ from brlcad.primitives import union
+-from draw_primitive import *
++from brlcad.procedural import *
+ import brlcad.geometry as geometry
+ 
+ def sanity_check(c_radius, c_length, rounding_radius):
+diff --git a/examples/sgi.py b/examples/sgi.py
+index e8ec03e..924d065 100644
+--- a/examples/sgi.py
++++ b/examples/sgi.py
+@@ -8,9 +8,7 @@ To Render :
+     pix-png -s 1024 < output.pix > output.png
+ """
+ 
+-import sys
+-from brlcad.primitives import union
+-from draw_primitive import *
++from brlcad.procedural import *
+ import brlcad.geometry as geometry
+ 
+ def right(a, b, rcc_name, sph_name):
+-- 
+2.14.3 (Apple Git-98)
+
+
+From d6c197ce8161518d4b8750ee9b15e1858111d79b Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Wed, 1 Aug 2018 23:25:16 +0530
+Subject: [PATCH 39/47] Introduced New Examples
+
+---
+ Tutorial/core_tutorial.py | 57 +++++++++++++++++++++++++++++++++++++++++++++--
+ brlcad/primitives/rec.py  |  2 +-
+ 2 files changed, 56 insertions(+), 3 deletions(-)
+
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index f83e586..08f30da 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -6,7 +6,7 @@ if __name__ == "__main__":
+     with Database("test_wdb.g", "Test BRLCAD DB file") as brl_db:
+         brl_db.sphere(
+             "sph1.s",
+-            center=(1, 2, 3),
++            center=(0.5, 5, 8),
+             radius=0.75
+         )
+         brl_db.rpp(
+@@ -169,16 +169,69 @@ if __name__ == "__main__":
+                 [(0.55, 4, 6.05), 0.1, 0, 0.45],
+             ]
+         )
++        
++        '''
++        To Complete : 
++        brl_db.ars(
++            "ars.s", 
++            curves=[]
++        )
++        '''
++
++        brl_db.bot(
++            "bot.s",
++            mode = 3,
++            orientation = 1,
++            flags = 0,
++            vertices = [(0, 5, 5), (0, 5, 6), (0, 6, 5), (1, 5, 5)],
++            faces = [(0, 1, 2), (1, 2, 3), (3, 1, 0)],
++            thickness=[2, 3, 1],
++            face_mode=[True, True, False]
++        )
+ 
++        '''
++        grip is created but unable to render
++        '''
++        brl_db.grip(
++            "grip.s",
++            center = (0, 5, 1),
++            normal = (1, 0, 0),
++            magnitude = 3,
++        )
++
++        brl_db.superell(
++            "superell.s",
++            center = (0, 5.5, 3),
++            a = (1, 0, 0),
++            b = (0, 1, 0),
++            c = (0, 0, 1),
++            n = 0,
++            e = 0
++        )
++
++        '''
++        Error : ctypes.ArgumentError: argument 6: <type 'exceptions.TypeError'>: expected LP_c_double_Array_5 instance instead of LP_c_double_Array_5
++
++        brl_db.metaball(
++            "metaball.s",      
++            points=[[(1, 1, 1), 1, 0], [(0, 0, 1), 2, 0]],
++            threshold=1, 
++            method=2, 
++        )
++        '''
++
++        '''
+         brl_db.half(
+             "half.s",
+             norm = (0, 0, 1), 
+             d = -1
+         )
+-        
++        '''
++
+         brl_db.region(
+             name="all.r",
+             tree=(
++                "bot.s",
+                 "sph1.s",
+                 "box1.s",
+                 "wedge1.s",
+diff --git a/brlcad/primitives/rec.py b/brlcad/primitives/rec.py
+index 4df56f3..ac8d80b 100644
+--- a/brlcad/primitives/rec.py
++++ b/brlcad/primitives/rec.py
+@@ -1,5 +1,5 @@
+ """
+-Python wrappers for the REC primtive of BRL-CAD.
++Python wrappers for the REC & RPC primtive of BRL-CAD.
+ """
+ 
+ from base import Primitive
+-- 
+2.14.3 (Apple Git-98)
+
+
+From f1c3426d680de05de253d89b5af8dce93f163bae Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Wed, 1 Aug 2018 23:57:55 +0530
+Subject: [PATCH 40/47] EBM example introduced
+
+---
+ Tutorial/core_tutorial.py |   7 +++++++
+ Tutorial/ychar.bw         | Bin 0 -> 122500 bytes
+ 2 files changed, 7 insertions(+)
+ create mode 100644 Tutorial/ychar.bw
+
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index 08f30da..39b4bc7 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -199,6 +199,13 @@ if __name__ == "__main__":
+             magnitude = 3,
+         )
+ 
++        brl_db.ebm(
++            "text1.s",
++            file_name = "ychar.bw",
++            x_dim = 350,
++            y_dim = 350,
++            tallness = 20)
++
+         brl_db.superell(
+             "superell.s",
+             center = (0, 5.5, 3),
+-- 
+2.14.3 (Apple Git-98)
+
+
+From efe542615971cd7fd88b41e83fc4d8b646364925 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Thu, 2 Aug 2018 00:02:17 +0530
+Subject: [PATCH 41/47] Submodel introduced
+
+---
+ Tutorial/core_tutorial.py |   6 ++++++
+ Tutorial/db.g             | Bin 0 -> 4112 bytes
+ 2 files changed, 6 insertions(+)
+ create mode 100644 Tutorial/db.g
+
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index 39b4bc7..5e57a3d 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -206,6 +206,12 @@ if __name__ == "__main__":
+             y_dim = 350,
+             tallness = 20)
+ 
++        brl_db.submodel(
++            "submodel.s",
++            file_name = "db.g",
++            treetop = "arb4.s",
++            )
++
+         brl_db.superell(
+             "superell.s",
+             center = (0, 5.5, 3),
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 02d42570af53a0f9494d07b1cb63ba7d9311be62 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Sun, 5 Aug 2018 17:12:39 +0530
+Subject: [PATCH 42/47] Backup
+
+---
+ Tutorial/cones_et_cylinders.py |  76 ++++++++++
+ Tutorial/core_tutorial.py      |  14 +-
+ Tutorial/db.g                  | Bin 4112 -> 6256 bytes
+ Tutorial/myfile.v              |  30 ++++
+ Tutorial/scene.py              | 330 +++++++++++++++++++++++++++++++++++++++++
+ Tutorial/test_wdb.sh           |  15 ++
+ Tutorial/view.v                |  15 ++
+ 7 files changed, 477 insertions(+), 3 deletions(-)
+ create mode 100644 Tutorial/cones_et_cylinders.py
+ create mode 100755 Tutorial/myfile.v
+ create mode 100644 Tutorial/scene.py
+ create mode 100755 Tutorial/test_wdb.sh
+ create mode 100755 Tutorial/view.v
+
+diff --git a/Tutorial/cones_et_cylinders.py b/Tutorial/cones_et_cylinders.py
+new file mode 100644
+index 0000000..5ebe4b6
+--- /dev/null
++++ b/Tutorial/cones_et_cylinders.py
+@@ -0,0 +1,76 @@
++from brlcad.procedural import *
++import brlcad.geometry as geometry
++
++def main():
++	draw_tgc('tgc1.s', [0, -7, 7,
++					   0, 0, 1,
++					   0.5, 0, 0,
++					   0, 1, 0,
++					   1, 0, 0,
++					   0, 0.5, 0], brl_db)
++
++	draw_tgc('tgc2.s', [0, -10.5, 7,
++					   0, 0, 1,
++					   1, 0, 0,
++					   0, 1, 0,
++					   1, 0, 0,
++					   0, 1, 0], brl_db)
++
++	draw_tgc('tgc3.s', [0, -8.5, 10,
++					   0, 0, 3,
++					   1, 0, 0,
++					   0, 0.5, 0,
++					   1, 0, 0,
++					   0, 0.5, 0], brl_db)
++
++	draw_tgc('tgc4.s', [0, -12, 10,
++					   0, 0, 3,
++					   1, 0, 0,
++					   0, 0.5, 0,
++					   3, 0, 0,
++					   0, 0.5, 0], brl_db)
++
++	draw_rcc('rcc1.s', [-2, -2, 0,
++					   0, 0, 5,
++					   1], brl_db)
++
++	draw_rcc('rcc2.s', [1, 5, 5,
++					   0, 0, 10,
++					   0.1], brl_db)
++
++	draw_rcc('rcc3.s', [1, 7, 5,
++					   0, 0, 0.5,
++					   1], brl_db)
++
++	draw_rhc('rhc.s', [0, -10, -5,
++					  0, 0, 0.5,
++					  0.25, 0.25, 0,
++					  0.75, 0.1], brl_db)
++
++	draw_rhc('rhc.s', [0, -10, -5,
++					  0, 0, 0.5,
++					  0.25, 0.25, 0,
++					  0.75, 0.1], brl_db)
++
++	draw_rhc('rhc2.s', [0, -13, -5,
++					  0, 0, 5,
++					  0.9, 0.1, 0,
++					  1, 0.1], brl_db)
++
++	draw_rhc('rhc3.s', [0, -16, -5,
++					  0, 1, 0,
++					  0.9, 0, 1,
++					  1, 0.5], brl_db)
++
++	draw_rhc('rhc4.s', [0, -13, -8,
++					  0, 0, 1,
++					  0.9, 0.1, 0,
++					  5, 0.1], brl_db)
++
++
++
++if __name__ == '__main__':
++	argv = sys.argv
++	database_name = argv[1]
++	brl_db = geometry.Database(database_name, "SGI.g")
++	main()
+\ No newline at end of file
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index 5e57a3d..a89f228 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -202,9 +202,9 @@ if __name__ == "__main__":
+         brl_db.ebm(
+             "text1.s",
+             file_name = "ychar.bw",
+-            x_dim = 350,
+-            y_dim = 350,
+-            tallness = 20)
++            x_dim = 10,
++            y_dim = 10,
++            tallness = 0.3)
+ 
+         brl_db.submodel(
+             "submodel.s",
+@@ -212,6 +212,14 @@ if __name__ == "__main__":
+             treetop = "arb4.s",
+             )
+ 
++        brl_db.sketch(
++            name = "mysketch",
++            base = (0, 0, 0),
++            u_vec = (1, 0, 0),
++            v_vec = (0, 1, 0),
++            vertices = ((0,0), (1, 0), (0, 1), (1,1))
++            )
++
+ 
+
+diff --git a/Tutorial/scene.py b/Tutorial/scene.py
+new file mode 100644
+index 0000000..a7c623d
+--- /dev/null
++++ b/Tutorial/scene.py
+@@ -0,0 +1,330 @@
++from brlcad.vmath import Transform
++from brlcad.geometry import Database
++from brlcad import primitives
++
++if __name__ == "__main__":
++    with Database("scene.g", "Test BRLCAD DB file") as brl_db:
++        '''
++        brl_db.sphere(
++            "sph1.s",
++            center=(0.5, 5, 8),
++            radius=0.75
++        )
++        brl_db.rpp(
++            "box1.s",
++            pmin=(0, 0, 0),
++            pmax=(2, 4, 2.5)
++        )
++        brl_db.wedge(
++            "wedge1.s",
++            vertex=(0, 0, 3.5),
++            x_dir=(0, 1, 0),
++            z_dir=(0, 0, 1),
++            x_len=4, y_len=2, z_len=1,
++            x_top_len=3
++        )
++        '''
++        brl_db.arb4(
++            "arb4.s",
++            points=[(-10, -8, 0), (-6, -10, 0), (-6, -6, 0), (-8, -8, 6)]
++        )
++        brl_db.arb5(
++            "arb5.s",
++            points=[(-10, -20, 0), (-6, -20, 0), (-6, -16, 0), (-10, -16, 0), (-8, -18, 6)]
++        )
++        brl_db.arb6(
++            "arb6.s",
++            points=[(-10, -30, 0), (-6, -30, 0), (-6, -26, 0), (-10, -26, 0), (-8, -30, 6), (-8, -26, 6)]
++        )
++        brl_db.arb7(
++            "arb7.s",
++            points=[(-10, -40, 0), (-6, -40, 0), (-6, -36, 0), (-10, -36, 0), (-9, -38, 6), (-7, -40, 6), (-7, -36, 6)]
++        )
++        brl_db.arb8(
++            "arb8.s",
++            points=[
++                (-10, -50, 0), (-6, -50, 0), (-6, -46, 0), (-10, -46, 0),
++                (-9, -49, 6), (-7, -49, 6), (-7, -47, 6), (-9, -47, 6)
++            ]
++        )
++
++        brl_db.arbn(
++            "arbn.s",
++            planes=[
++                [(0, 0, -1), -10],
++                [(0, 0, 1), 11],
++                [(-1, 0, 0), 0.5],
++                [(1, 0, 0), 0.5],
++                [(0, -1, 0), 0.5],
++                [(0, 1, 0), 0.5],
++            ]
++        )
++
++        brl_db.rhc('rhc.s', 
++                base = (6, -6, 0),
++                height = (0, 0, 1),
++                breadth = (0.4, 0.4, 0),
++                half_width = 3,
++                asymptote = 0.1
++        )
++
++        brl_db.rhc('rhc2.s', 
++                base = (2, -9, 0),
++                height = (0, 0, 3),
++                breadth =  (1, 0, 0),
++                half_width = 3,
++                asymptote = 0.1
++        )
++
++        brl_db.rhc('rhc3.s', 
++                base = (2, -14.5, 0),
++                height = (0, 1, 0),
++                breadth = (0.9, 0, 3),
++                half_width = 1, 
++                asymptote = 0.5
++        )
++
++        brl_db.rhc('rhc4.s', 
++                base = (2, -21.5, 0),
++                height = (0, 0, 1),
++                breadth = (1, 0, 0),
++                half_width = 3.5, 
++                asymptote = 3
++        )
++
++        '''
++        brl_db.ellipsoid(
++        (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
++                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
++            "ellipsoid.s",
++            center=(0, -4, 6),
++            a=(0.75, 0, 0),
++            b=(0, 1, 0),
++            c=(0, 0, 0.5)
++        )
++        brl_db.torus(
++            "torus.s",
++            center=(0, -2, 6),
++            n=(0, 0, 1),
++            r_revolution=1,
++            r_cross=0.25
++        )
++        brl_db.rcc(
++            "rcc.s",
++            base=(1, 2, 5),
++            height=(0, 0, 1),
++            radius=1
++        )
++        brl_db.tgc(
++            "tgc.s",
++            base=(0, -5, 7),
++            height=(0, 0, 1),
++            a=(0.5, 0, 0),
++            b=(0, 1, 0),
++            c=(1, 0, 0),
++            d=(0, 0.5, 0)
++        )
++        brl_db.cone(
++            "cone.s",
++            base=(0, -2, 7),
++            n=(0, 0, 2),
++            h=0.5,
++            r_base=1.25,
++            r_top=0.75
++        )
++        brl_db.trc(
++            "trc.s",
++            base=(0, -2, 7.5),
++            height=(0, 0, 0.5),
++            r_base=0.75,
++            r_top=1.25
++        )
++        brl_db.rpc(
++            "rpc.s",
++            base=(0, -2, 8.5),
++            height=(0, 0, 0.5),
++            breadth=(0.25, 0.25, 0),
++            half_width=0.75
++        )
++        brl_db.rhc(
++            "rhc.s",
++            base=(0, -2, 9),
++            height=(0, 0, 0.5),
++            breadth=(0.25, 0.25, 0),
++            half_width=0.75,
++            asymptote=0.1
++        )
++        brl_db.epa(
++            "epa.s",
++            base=(1, 2, 7),
++            height=(0, 0, -1),
++            n_major=(1, 0, 0),
++            r_major=1,
++            r_minor=0.5
++        )
++        brl_db.ehy(
++            "ehy.s",
++            base=(1, 2, 7),
++            height=(0, 0, 1),
++            n_major=(1, 0, 0),
++            r_major=1, r_minor=0.5,
++            asymptote=0.1
++        )
++        brl_db.hyperboloid(
++            "hyperboloid.s",
++            base=(0, 0, 6.75),
++            height=(0, 0, 0.75),
++            a_vec=(1, 0, 0),
++            b_mag=0.5,
++            base_neck_ratio=0.3
++        )
++        brl_db.eto(
++            "eto.s",
++            center=(1, 2, 8.5),
++            n=(0, 0, 1),
++            s_major=(0.5, 0, 0.5),
++            r_revolution=1,
++            r_minor=0.25
++        )
++
++        brl_db.particle(
++            "particle.s",
++            base=(0, -5, 8.5),
++            height=(0, 0, 0.75),
++            r_base=0.25,
++            r_end=0.5
++        )
++        brl_db.pipe(
++            "pipe.s",
++            points=[
++                [(0.55, 4, 5.45), 0.1, 0, 0.45],
++                [(0.55, 3.55, 5.4875), 0.1, 0, 0.45],
++                [(1.45, 3.55, 5.5625), 0.1, 0, 0.45],
++                [(1.45, 4.45, 5.6375), 0.1, 0, 0.45],
++                [(0.55, 4.45, 5.7125), 0.1, 0, 0.45],
++                [(0.55, 3.55, 5.7875), 0.1, 0, 0.45],
++                [(1.45, 3.55, 5.8625), 0.1, 0, 0.45],
++                [(1.45, 4.45, 5.9375), 0.1, 0, 0.45],
++                [(0.55, 4.45, 6.0125), 0.1, 0, 0.45],
++                [(0.55, 4, 6.05), 0.1, 0, 0.45],
++            ]
++        )
++        '''
++        
++        '''
++        To Complete : 
++        brl_db.ars(
++            "ars.s", 
++            curves=[]
++        )
++        '''
++        '''
++        brl_db.bot(
++            "bot.s",
++            mode = 3,
++            orientation = 1,
++            flags = 0,
++            vertices = [(0, 5, 5), (0, 5, 6), (0, 6, 5), (1, 5, 5)],
++            faces = [(0, 1, 2), (1, 2, 3), (3, 1, 0)],
++            thickness=[2, 3, 1],
++            face_mode=[True, True, False]
++        )
++        '''
++
++        '''
++        grip is created but unable to render
++        '''
++
++        '''
++        brl_db.grip(
++            "grip.s",
++            center = (0, 5, 1),
++            normal = (1, 0, 0),
++            magnitude = 3,
++        )
++
++        brl_db.ebm(
++            "text1.s",
++            file_name = "ychar.bw",
++            x_dim = 10,
++            y_dim = 10,
++            tallness = 0.3)
++
++        brl_db.submodel(
++            "submodel.s",
++            file_name = "db.g",
++            treetop = "arb4.s",
++            )
++
++        brl_db.sketch(
++            name = "mysketch",
++            base = (0, 0, 0),
++            u_vec = (1, 0, 0),
++            v_vec = (0, 1, 0),
++            vertices = ((0,0), (1, 0), (0, 1), (1,1))
++            )
++
++        brl_db.superell(
++            "superell.s",
++            center = (0, 5.5, 3),
++            a = (1, 0, 0),
++            b = (0, 1, 0),
++            c = (0, 0, 1),
++            n = 0,
++            e = 0
++        )
++        '''
++
++        '''
++        Error : ctypes.ArgumentError: argument 6: <type 'exceptions.TypeError'>: expected LP_c_double_Array_5 instance instead of LP_c_double_Array_5
++
++        brl_db.metaball(
++            "metaball.s",      
++            points=[[(1, 1, 1), 1, 0], [(0, 0, 1), 2, 0]],
++            threshold=1, 
++            method=2, 
++        )
++        '''
++
++        '''
++        brl_db.half(
++            "half.s",
++            norm = (0, 0, 1), 
++            d = -1
++        )
++        '''
++
++        '''
++
++        brl_db.region(
++            name="all.r",
++            tree=(
++                "bot.s",
++                "sph1.s",
++                "box1.s",
++                "wedge1.s",
++                "arb4.s",
++                "arb5.s",
++                "arb6.s",
++                "arb7.s",
++                "arb8.s",
++                "ellipsoid.s",
++                "torus.s",
++                "rcc.s",
++                "tgc.s",
++                "cone.s",
++                "trc.s",
++                "rpc.s",
++                "rhc.s",
++                "epa.s",
++                "ehy.s",
++                "hyperboloid.s",
++                "eto.s",
++                primitives.leaf("arbn.s", Transform.translation(1, 0, 0)),
++                "particle.s",
++                "pipe.s",
++            ),
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(64, 180, 96)
++        )
++        '''
+
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 699e3ccf4c82e0245bcaa229a367bdc382921caf Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Sun, 5 Aug 2018 20:57:48 +0530
+Subject: [PATCH 43/47] Getting there
+
+---
+ Tutorial/scene.py | 95 ++++++++++++++++++++++++++++++++++++++-----------------
+ Tutorial/test2.v  | 15 +++++++++
+ Tutorial/view.v   | 15 +++++++++
+ Tutorial/view1.v  | 30 ++++++++++++++++++
+ Tutorial/view2.v  | 15 +++++++++
+ Tutorial/view3.s  | 15 +++++++++
+ Tutorial/view4.v  | 15 +++++++++
+ 7 files changed, 171 insertions(+), 29 deletions(-)
+ create mode 100755 Tutorial/test2.v
+ create mode 100755 Tutorial/view1.v
+ create mode 100755 Tutorial/view2.v
+ create mode 100755 Tutorial/view3.s
+ create mode 100755 Tutorial/view4.v
+
+diff --git a/Tutorial/scene.py b/Tutorial/scene.py
+index a7c623d..8d441ec 100644
+--- a/Tutorial/scene.py
++++ b/Tutorial/scene.py
+@@ -26,25 +26,25 @@ if __name__ == "__main__":
+         '''
+         brl_db.arb4(
+             "arb4.s",
+-            points=[(-10, -8, 0), (-6, -10, 0), (-6, -6, 0), (-8, -8, 6)]
++            points=[(-10, -8.5, 0), (-6, -11, 0), (-6, -6, 0), (-8, -8.5, 6)]
+         )
+         brl_db.arb5(
+             "arb5.s",
+-            points=[(-10, -20, 0), (-6, -20, 0), (-6, -16, 0), (-10, -16, 0), (-8, -18, 6)]
++            points=[(-10, -20, 0), (-6, -20, 0), (-6, -15, 0), (-10, -15, 0), (-8, -17.5, 6)]
+         )
+         brl_db.arb6(
+             "arb6.s",
+-            points=[(-10, -30, 0), (-6, -30, 0), (-6, -26, 0), (-10, -26, 0), (-8, -30, 6), (-8, -26, 6)]
++            points=[(-10, -30, 0), (-6, -30, 0), (-6, -25, 0), (-10, -25, 0), (-8, -30, 6), (-8, -25, 6)]
+         )
+         brl_db.arb7(
+             "arb7.s",
+-            points=[(-10, -40, 0), (-6, -40, 0), (-6, -36, 0), (-10, -36, 0), (-9, -38, 6), (-7, -40, 6), (-7, -36, 6)]
++            points=[(-10, -40, 0), (-6, -40, 0), (-6, -35, 0), (-10, -35, 0), (-9, -37.5, 6), (-7, -40, 6), (-7, -36.5, 6)]
+         )
+         brl_db.arb8(
+             "arb8.s",
+             points=[
+-                (-10, -50, 0), (-6, -50, 0), (-6, -46, 0), (-10, -46, 0),
+-                (-9, -49, 6), (-7, -49, 6), (-7, -47, 6), (-9, -47, 6)
++                (-10, -50, 0), (-6, -50, 0), (-6, -45, 0), (-10, -45, 0),
++                (-9, -50, 6), (-7, -50, 6), (-7, -45, 6), (-9, -45, 6)
+             ]
+         )
+ 
+@@ -60,36 +60,73 @@ if __name__ == "__main__":
+             ]
+         )
+ 
+-        brl_db.rhc('rhc.s', 
+-                base = (6, -6, 0),
+-                height = (0, 0, 1),
+-                breadth = (0.4, 0.4, 0),
+-                half_width = 3,
++        brl_db.rhc("rhc2.s", 
++                base = (15, -47.5, 0),
++                height = (0, 0, 6),
++                breadth =  (2.5, 0, 0),
++                half_width = 2.5,
+                 asymptote = 0.1
+         )
+ 
+-        brl_db.rhc('rhc2.s', 
+-                base = (2, -9, 0),
+-                height = (0, 0, 3),
+-                breadth =  (1, 0, 0),
+-                half_width = 3,
+-                asymptote = 0.1
++        brl_db.rpc("rpc.s",
++            base=(15, -37.5, 0),
++            height=(0, 0, 6),
++            breadth=(2.5, 0, 0),
++            half_width= 2.5
++        )
++
++        brl_db.epa(
++            "epa.s",
++            base=(15, -27.5, 0),
++            height=(0, 0, 6),
++            n_major=(1, 0, 0),
++            r_major=3,
++            r_minor=2
++        )
++        brl_db.ehy(
++            "ehy.s",
++            base=(15, -17.5, 0),
++            height=(0, 0, 6),
++            n_major=(1, 0, 0),
++            r_major=3, r_minor=2,
++            asymptote=0.1
++        )
++
++        brl_db.particle(
++            "particle.s",
++            base=(15, -8.5, 1.25),
++            height=(0, 0, 2.5),
++            r_base=2.5,
++            r_end=1.5
+         )
+ 
+-        brl_db.rhc('rhc3.s', 
+-                base = (2, -14.5, 0),
+-                height = (0, 1, 0),
+-                breadth = (0.9, 0, 3),
+-                half_width = 1, 
+-                asymptote = 0.5
++        brl_db.rcc(
++            "rcc.s",
++            base= (40, -47.5, 0),
++            height= (0, 0, 6),
++            radius= 2.5
+         )
+ 
+-        brl_db.rhc('rhc4.s', 
+-                base = (2, -21.5, 0),
+-                height = (0, 0, 1),
+-                breadth = (1, 0, 0),
+-                half_width = 3.5, 
+-                asymptote = 3
++        brl_db.tgc(
++            "tgc.s",
++            base=(40, -37.5, 0),
++            height=(0, 0, 6),
++            a=(1, 0, 0),
++            b=(0, 2, 0),
++            c=(2, 0, 0),
++            d=(0, 1, 0)
++        )
++        '''
++        Hack for tec
++        '''
++        brl_db.tgc(
++            "tec.s",
++            base=(40, -27.5, 0),
++            height=(0, 0, 6),
++            a=(1, 0, 0),
++            b=(0, 3, 0),
++            c=(1, 0, 0),
++            d=(0, 1.5, 0)
+         )
+ 
+         '''
+-- 
+2.14.3 (Apple Git-98)
+
+
+From b2cb6cd332b695276eded07842652cd345341a1c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Mon, 6 Aug 2018 10:19:13 +0530
+Subject: [PATCH 44/47] Finally got the pipe working
+
+---
+ Tutorial/scene.py | 236 +++++++++++++++++-------------------------------------
+ Tutorial/view9.v  |  15 ++++
+ 2 files changed, 89 insertions(+), 162 deletions(-)
+ create mode 100755 Tutorial/view9.v
+
+diff --git a/Tutorial/scene.py b/Tutorial/scene.py
+index 8d441ec..66dea79 100644
+--- a/Tutorial/scene.py
++++ b/Tutorial/scene.py
+@@ -117,7 +117,7 @@ if __name__ == "__main__":
+             d=(0, 1, 0)
+         )
+         '''
+-        Hack for tec
++        TEC is a special case of TGC
+         '''
+         brl_db.tgc(
+             "tec.s",
+@@ -130,132 +130,99 @@ if __name__ == "__main__":
+         )
+ 
+         '''
++        REC is a special case of TGC
++        '''
++        brl_db.tgc(
++            'rec.s',
++            base=(40, -17.5, 0),
++            height=(0, 0, 6),
++            a=(1, 0, 0),
++            b=(0, 2, 0),
++            c=(1, 0, 0),
++            d=(0, 2, 0)
++            )
++
++        brl_db.trc(
++            "trc.s",
++            base=(40, -8.5, 0),
++            height=(0, 0, 6),
++            r_base=1.25,
++            r_top=2.5
++        )
++
++        brl_db.sphere(
++            "sph1.s",
++            center = (65, -47.5, 2.5),
++            radius = 3
++        )
++
+         brl_db.ellipsoid(
+-        (-1, -1, 5), (1, -1, 5), (1, 1, 5), (-1, 1, 5),
+-                (-0.5, -0.5, 6.5), (0.5, -0.5, 6.5), (0.5, 0.5, 6.5), (-0.5, 0.5, 6.5)
+             "ellipsoid.s",
+-            center=(0, -4, 6),
+-            a=(0.75, 0, 0),
+-            b=(0, 1, 0),
+-            c=(0, 0, 0.5)
++            center=(65, -37.5, 2.5),
++            a=(3, 0, 0),
++            b=(0, 3, 0),
++            c=(0, 0, 2)
+         )
++
++        brl_db.ellipsoid(
++            "ellipsoid2.s",
++            center=(65, -27.5, 2.5),
++            a=(2, 0, 0),
++            b=(0, 2, 0),
++            c=(0, 0, 3)
++        )
++
+         brl_db.torus(
+             "torus.s",
+-            center=(0, -2, 6),
++            center=(65, -17.5, 2.5),
+             n=(0, 0, 1),
+-            r_revolution=1,
+-            r_cross=0.25
+-        )
+-        brl_db.rcc(
+-            "rcc.s",
+-            base=(1, 2, 5),
+-            height=(0, 0, 1),
+-            radius=1
++            r_revolution=2.25,
++            r_cross=1
+         )
+-        brl_db.tgc(
+-            "tgc.s",
+-            base=(0, -5, 7),
+-            height=(0, 0, 1),
+-            a=(0.5, 0, 0),
+-            b=(0, 1, 0),
+-            c=(1, 0, 0),
+-            d=(0, 0.5, 0)
++
++        brl_db.eto(
++            "eto.s",
++            center=(65, -8.5, 2.5),
++            n=(0, 0, 1),
++            s_major=(1, 0, 1),
++            r_revolution=2.25,
++            r_minor=0.50
+         )
++
+         brl_db.cone(
+             "cone.s",
+-            base=(0, -2, 7),
+-            n=(0, 0, 2),
+-            h=0.5,
+-            r_base=1.25,
+-            r_top=0.75
+-        )
+-        brl_db.trc(
+-            "trc.s",
+-            base=(0, -2, 7.5),
+-            height=(0, 0, 0.5),
+-            r_base=0.75,
+-            r_top=1.25
+-        )
+-        brl_db.rpc(
+-            "rpc.s",
+-            base=(0, -2, 8.5),
+-            height=(0, 0, 0.5),
+-            breadth=(0.25, 0.25, 0),
+-            half_width=0.75
+-        )
+-        brl_db.rhc(
+-            "rhc.s",
+-            base=(0, -2, 9),
+-            height=(0, 0, 0.5),
+-            breadth=(0.25, 0.25, 0),
+-            half_width=0.75,
+-            asymptote=0.1
+-        )
+-        brl_db.epa(
+-            "epa.s",
+-            base=(1, 2, 7),
+-            height=(0, 0, -1),
+-            n_major=(1, 0, 0),
+-            r_major=1,
+-            r_minor=0.5
+-        )
+-        brl_db.ehy(
+-            "ehy.s",
+-            base=(1, 2, 7),
+-            height=(0, 0, 1),
+-            n_major=(1, 0, 0),
+-            r_major=1, r_minor=0.5,
+-            asymptote=0.1
++            base=(90, -47.5, 0),
++            n=(0, 0, 1),
++            h=6,
++            r_base=2.5,
++            r_top=0
+         )
++
+         brl_db.hyperboloid(
+             "hyperboloid.s",
+-            base=(0, 0, 6.75),
+-            height=(0, 0, 0.75),
+-            a_vec=(1, 0, 0),
+-            b_mag=0.5,
++            base=(90, -37.5, 0),
++            height=(0, 0, 6),
++            a_vec=(1.5, 1, 0),
++            b_mag=1,
+             base_neck_ratio=0.3
+         )
+-        brl_db.eto(
+-            "eto.s",
+-            center=(1, 2, 8.5),
+-            n=(0, 0, 1),
+-            s_major=(0.5, 0, 0.5),
+-            r_revolution=1,
+-            r_minor=0.25
+-        )
+ 
+-        brl_db.particle(
+-            "particle.s",
+-            base=(0, -5, 8.5),
+-            height=(0, 0, 0.75),
+-            r_base=0.25,
+-            r_end=0.5
+-        )
+         brl_db.pipe(
+             "pipe.s",
+             points=[
+-                [(0.55, 4, 5.45), 0.1, 0, 0.45],
+-                [(0.55, 3.55, 5.4875), 0.1, 0, 0.45],
+-                [(1.45, 3.55, 5.5625), 0.1, 0, 0.45],
+-                [(1.45, 4.45, 5.6375), 0.1, 0, 0.45],
+-                [(0.55, 4.45, 5.7125), 0.1, 0, 0.45],
+-                [(0.55, 3.55, 5.7875), 0.1, 0, 0.45],
+-                [(1.45, 3.55, 5.8625), 0.1, 0, 0.45],
+-                [(1.45, 4.45, 5.9375), 0.1, 0, 0.45],
+-                [(0.55, 4.45, 6.0125), 0.1, 0, 0.45],
+-                [(0.55, 4, 6.05), 0.1, 0, 0.45],
++                [(87.4337, -28.1268, 1.01347), 0.604139, 0, 2.71863],
++                [(87.4547, -30.8446, 1.24826), 0.604139, 0, 2.71863],
++                [(92.8908, -30.8003, 1.71279), 0.604139, 0, 2.71863],
++                [(92.8468, -25.3618, 2.14942), 0.604139, 0, 2.71863],
++                [(87.4088, -25.4035, 2.59109), 0.604139, 0, 2.71863],
++                [(87.4508, -30.8392, 3.06066), 0.604139, 0, 2.71863],
++                [(92.8869, -30.7948, 3.5252), 0.604139, 0, 2.71863],
++                [(92.843, -25.3564, 3.96183), 0.604139, 0, 2.71863],
++                [(87.4049, -25.398, 4.4035), 0.604139, 0, 2.71863],
++                [(87.4259, -28.1159, 4.63828), 0.604139, 0, 2.71863],
+             ]
+         )
+-        '''
+-        
+-        '''
+-        To Complete : 
+-        brl_db.ars(
+-            "ars.s", 
+-            curves=[]
+-        )
+-        '''
+-        '''
++
+         brl_db.bot(
+             "bot.s",
+             mode = 3,
+@@ -266,20 +233,9 @@ if __name__ == "__main__":
+             thickness=[2, 3, 1],
+             face_mode=[True, True, False]
+         )
++        
+         '''
+ 
+-        '''
+-        grip is created but unable to render
+-        '''
+-
+-        '''
+-        brl_db.grip(
+-            "grip.s",
+-            center = (0, 5, 1),
+-            normal = (1, 0, 0),
+-            magnitude = 3,
+-        )
+-
+         brl_db.ebm(
+             "text1.s",
+             file_name = "ychar.bw",
+@@ -301,15 +257,6 @@ if __name__ == "__main__":
+             vertices = ((0,0), (1, 0), (0, 1), (1,1))
+             )
+ 
+-        brl_db.superell(
+-            "superell.s",
+-            center = (0, 5.5, 3),
+-            a = (1, 0, 0),
+-            b = (0, 1, 0),
+-            c = (0, 0, 1),
+-            n = 0,
+-            e = 0
+-        )
+         '''
+ 
+         '''
+@@ -330,38 +277,3 @@ if __name__ == "__main__":
+             d = -1
+         )
+         '''
+-
+-        '''
+-
+-        brl_db.region(
+-            name="all.r",
+-            tree=(
+-                "bot.s",
+-                "sph1.s",
+-                "box1.s",
+-                "wedge1.s",
+-                "arb4.s",
+-                "arb5.s",
+-                "arb6.s",
+-                "arb7.s",
+-                "arb8.s",
+-                "ellipsoid.s",
+-                "torus.s",
+-                "rcc.s",
+-                "tgc.s",
+-                "cone.s",
+-                "trc.s",
+-                "rpc.s",
+-                "rhc.s",
+-                "epa.s",
+-                "ehy.s",
+-                "hyperboloid.s",
+-                "eto.s",
+-                primitives.leaf("arbn.s", Transform.translation(1, 0, 0)),
+-                "particle.s",
+-                "pipe.s",
+-            ),
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(64, 180, 96)
+-        )
+-        '''
+
+2.14.3 (Apple Git-98)
+
+
+From 1753c0b77fad00e496229c12ee48fb7e1edaaed9 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Mon, 6 Aug 2018 20:42:03 +0530
+Subject: [PATCH 45/47] Basic Shaders added for all primitives
+
+---
+ Tutorial/scene.py | 304 +++++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 266 insertions(+), 38 deletions(-)
+
+diff --git a/Tutorial/scene.py b/Tutorial/scene.py
+index 66dea79..99a3f85 100644
+--- a/Tutorial/scene.py
++++ b/Tutorial/scene.py
+@@ -10,19 +10,13 @@ if __name__ == "__main__":
+             center=(0.5, 5, 8),
+             radius=0.75
+         )
++
+         brl_db.rpp(
+             "box1.s",
+             pmin=(0, 0, 0),
+             pmax=(2, 4, 2.5)
+         )
+-        brl_db.wedge(
+-            "wedge1.s",
+-            vertex=(0, 0, 3.5),
+-            x_dir=(0, 1, 0),
+-            z_dir=(0, 0, 1),
+-            x_len=4, y_len=2, z_len=1,
+-            x_top_len=3
+-        )
++
+         '''
+         brl_db.arb4(
+             "arb4.s",
+@@ -223,32 +217,34 @@ if __name__ == "__main__":
+             ]
+         )
+ 
++        a = (88.7623, -18.0656, 0.601931)
++        b = (87.5712, -18.447, 4.56638)
++        c = (91.6581, -15.3077, 1.73722)
++        d = (91.4966, -21.1526, 1.12646)
++
+         brl_db.bot(
+             "bot.s",
+             mode = 3,
+             orientation = 1,
+             flags = 0,
+-            vertices = [(0, 5, 5), (0, 5, 6), (0, 6, 5), (1, 5, 5)],
++            vertices = [a, b, c, d],
+             faces = [(0, 1, 2), (1, 2, 3), (3, 1, 0)],
+             thickness=[2, 3, 1],
+             face_mode=[True, True, False]
+         )
+-        
+-        '''
+ 
+-        brl_db.ebm(
+-            "text1.s",
+-            file_name = "ychar.bw",
+-            x_dim = 10,
+-            y_dim = 10,
+-            tallness = 0.3)
+-
+-        brl_db.submodel(
+-            "submodel.s",
+-            file_name = "db.g",
+-            treetop = "arb4.s",
++        brl_db.wedge(
++            "wedge1.s",
++            vertex=(87, -8.5, 0),
++            x_dir=(0, 0, 1),
++            z_dir=(0, -1, 0),
++            x_len=5, y_len=4, z_len=1,
++            x_top_len = 2
+             )
+ 
++
++        
++        '''
+         brl_db.sketch(
+             name = "mysketch",
+             base = (0, 0, 0),
+@@ -256,24 +252,256 @@ if __name__ == "__main__":
+             v_vec = (0, 1, 0),
+             vertices = ((0,0), (1, 0), (0, 1), (1,1))
+             )
+-
+         '''
+ 
+-        '''
+-        Error : ctypes.ArgumentError: argument 6: <type 'exceptions.TypeError'>: expected LP_c_double_Array_5 instance instead of LP_c_double_Array_5
++        brl_db.region(
++            'bot.r',
++            region_id = 1,
++            tree = 'bot.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
+ 
+-        brl_db.metaball(
+-            "metaball.s",      
+-            points=[[(1, 1, 1), 1, 0], [(0, 0, 1), 2, 0]],
+-            threshold=1, 
+-            method=2, 
+-        )
+-        '''
++        brl_db.region(
++            'arb4.r',
++            region_id = 1,
++            tree = 'arb4.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'arb5.r',
++            region_id = 1,
++            tree = 'arb5.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'arb6.r',
++            region_id = 1,
++            tree = 'arb6.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'arb7.r',
++            region_id = 1,
++            tree = 'arb7.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'arb8.r',
++            region_id = 1,
++            tree = 'arb8.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'rhc.r',
++            region_id = 1,
++            tree = 'rhc2.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'rpc.r',
++            region_id = 1,
++            tree = 'rpc.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'epa.r',
++            region_id = 1,
++            tree = 'epa.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'ehy.r',
++            region_id = 1,
++            tree = 'ehy.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'particle.r',
++            region_id = 1,
++            tree = 'particle.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'rcc.r',
++            region_id = 1,
++            tree = 'rcc.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'tgc.r',
++            region_id = 1,
++            tree = 'tgc.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'tec.r',
++            region_id = 1,
++            tree = 'tec.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'rec.r',
++            region_id = 1,
++            tree = 'rec.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'trc.r',
++            region_id = 1,
++            tree = 'trc.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'sph.r',
++            region_id = 1,
++            tree = 'sph1.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'ellipsoid.r',
++            region_id = 1,
++            tree = 'ellipsoid.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'ellipsoid2.r',
++            region_id = 1,
++            tree = 'ellipsoid2.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++
++        brl_db.region(
++            'torus.r',
++            region_id = 1,
++            tree = 'torus.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'eto.r',
++            region_id = 1,
++            tree = 'eto.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'cone.r',
++            region_id = 1,
++            tree = 'cone.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'cone.r',
++            region_id = 1,
++            tree = 'cone.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'hyperboloid.r',
++            region_id = 1,
++            tree = 'hyperboloid.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'pipe.r',
++            region_id = 1,
++            tree = 'pipe.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++
++        brl_db.region(
++            'bot.r',
++            region_id = 1,
++            tree = 'bot.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++
++        brl_db.region(
++            'wedge.r',
++            region_id = 1,
++            tree = 'wedge1.s',
++            shader="plastic {di .8 sp .2}",
++            rgb_color=(255, 0, 96)
++            )
++        
++
++        brl_db.region(
++            name="all.r",
++            region_id = 123,
++            tree=(
++                "bot.s",
++                "sph1.s",
++                "ellipsoid2.s",
++                "wedge1.s",
++                "arb4.s",
++                "arb5.s",
++                "arb6.s",
++                "arb7.s",
++                "arb8.s",
++                "tec.s",
++                "rec.s",
++                "ellipsoid.s",
++                "torus.s",
++                "rcc.s",
++                "tgc.s",
++                "cone.s",
++                "trc.s",
++                "rpc.s",
++                "rhc2.s",
++                "epa.s",
++                "ehy.s",
++                "hyperboloid.s",
++                "eto.s",
++                "particle.s",
++                "pipe.s",
++            ),
+ 
+-        '''
+-        brl_db.half(
+-            "half.s",
+-            norm = (0, 0, 1), 
+-            d = -1
+         )
+-        '''
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 1fae8e8fb1b010e424380eb2bf1a48a6f36a42c2 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 7 Aug 2018 11:21:11 +0530
+Subject: [PATCH 46/47] Added base and shaders
+
+---
+ Tutorial/scene.py | 174 ++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 90 insertions(+), 84 deletions(-)
+
+diff --git a/Tutorial/scene.py b/Tutorial/scene.py
+index 99a3f85..80856b7 100644
+--- a/Tutorial/scene.py
++++ b/Tutorial/scene.py
+@@ -242,6 +242,20 @@ if __name__ == "__main__":
+             x_top_len = 2
+             )
+ 
++        brl_db.arb8(
++            'base.s',
++            points = [
++                      (-90, -150, -2.5), (150, -150, -2.5), (150, 60, -2.5), (-90, 60, -2.5),
++                      (-90, -150, -1.2), (150, -150, -1.2), (150, 60, -1.2), (-90, 60, -1.1)]
++            )
++
++        brl_db.region(
++            "base.r",
++            region_id = 123,
++            tree = "base.s",
++            shader = "mirror {re 0.2}",
++            rgb_color = (0, 0, 0)
++        )
+ 
+         
+         '''
+@@ -258,217 +272,209 @@ if __name__ == "__main__":
+             'bot.r',
+             region_id = 1,
+             tree = 'bot.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(240,163,255)
+             )
+ 
+         brl_db.region(
+             'arb4.r',
+-            region_id = 1,
++            region_id = 2,
+             tree = 'arb4.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,117,220)
+             )
+ 
+         brl_db.region(
+             'arb5.r',
+-            region_id = 1,
++            region_id = 3,
+             tree = 'arb5.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(153,63,0)
+             )
+ 
+         brl_db.region(
+             'arb6.r',
+-            region_id = 1,
++            region_id = 4,
+             tree = 'arb6.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(76,0,92)
+             )
+ 
+         brl_db.region(
+             'arb7.r',
+-            region_id = 1,
++            region_id = 5,
+             tree = 'arb7.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255, 80, 5)
+             )
+ 
+         brl_db.region(
+             'arb8.r',
+-            region_id = 1,
++            region_id = 6,
+             tree = 'arb8.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,92,49)
+             )
+ 
+         brl_db.region(
+             'rhc.r',
+-            region_id = 1,
++            region_id = 7,
+             tree = 'rhc2.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(43,206,72)
+             )
+ 
+         brl_db.region(
+             'rpc.r',
+-            region_id = 1,
++            region_id = 7,
+             tree = 'rpc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,204,153)
+             )
+ 
+         brl_db.region(
+             'epa.r',
+-            region_id = 1,
++            region_id = 8,
+             tree = 'epa.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(128,128,128)
+             )
+ 
+         brl_db.region(
+             'ehy.r',
+-            region_id = 1,
++            region_id = 9,
+             tree = 'ehy.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(148,255,181)
+             )
+ 
+         brl_db.region(
+             'particle.r',
+-            region_id = 1,
++            region_id = 10,
+             tree = 'particle.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(143,124,0)
+             )
+ 
+         brl_db.region(
+             'rcc.r',
+-            region_id = 1,
++            region_id = 11,
+             tree = 'rcc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(157,204,0)
+             )
+ 
+         brl_db.region(
+             'tgc.r',
+-            region_id = 1,
++            region_id = 12,
+             tree = 'tgc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(194,0,136)
+             )
+ 
+         brl_db.region(
+             'tec.r',
+-            region_id = 1,
++            region_id = 13,
+             tree = 'tec.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,51,128)
+             )
+ 
+         brl_db.region(
+             'rec.r',
+-            region_id = 1,
++            region_id = 14,
+             tree = 'rec.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,164,5)
+             )
+ 
+         brl_db.region(
+             'trc.r',
+-            region_id = 1,
++            region_id = 15,
+             tree = 'trc.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,168,187)
+             )
+ 
+         brl_db.region(
+             'sph.r',
+-            region_id = 1,
++            region_id = 16,
+             tree = 'sph1.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(66,102,0)
+             )
+ 
+         brl_db.region(
+             'ellipsoid.r',
+-            region_id = 1,
++            region_id = 17,
+             tree = 'ellipsoid.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255,0,16)
+             )
+ 
+         brl_db.region(
+             'ellipsoid2.r',
+-            region_id = 1,
++            region_id = 18,
+             tree = 'ellipsoid2.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(94,241,242)
+             )
+ 
+ 
+         brl_db.region(
+             'torus.r',
+-            region_id = 1,
++            region_id = 19,
+             tree = 'torus.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(0,153,143)
+             )
+ 
+         brl_db.region(
+             'eto.r',
+-            region_id = 1,
++            region_id = 20,
+             tree = 'eto.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(224,255,102)
+             )
+ 
+         brl_db.region(
+             'cone.r',
+-            region_id = 1,
++            region_id = 21,
+             tree = 'cone.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(116,10,255)
+             )
+ 
+         brl_db.region(
+             'cone.r',
+-            region_id = 1,
++            region_id = 22,
+             tree = 'cone.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(153, 0, 0)
+             )
+ 
+         brl_db.region(
+             'hyperboloid.r',
+-            region_id = 1,
++            region_id = 23,
+             tree = 'hyperboloid.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255, 255, 128)
+             )
+ 
+         brl_db.region(
+             'pipe.r',
+-            region_id = 1,
++            region_id = 24,
+             tree = 'pipe.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
++            shader="plastic {di .9 sp .4}",
++            rgb_color=(255, 255, 0)
+             )
+ 
+ 
+-        brl_db.region(
+-            'bot.r',
+-            region_id = 1,
+-            tree = 'bot.s',
+-            shader="plastic {di .8 sp .2}",
+-            rgb_color=(255, 0, 96)
+-            )
+-
+         brl_db.region(
+             'wedge.r',
+-            region_id = 1,
++            region_id = 25,
+             tree = 'wedge1.s',
+-            shader="plastic {di .8 sp .2}",
++            shader="plastic {di .9 sp .4}",
+             rgb_color=(255, 0, 96)
+             )
+         
+-- 
+2.14.3 (Apple Git-98)
+
+
+From cd3ed94705933600f2a94f9e7ccde2e2ddd69497 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 7 Aug 2018 11:55:26 +0530
+Subject: [PATCH 47/47] Minor updates
+
+---
+ Tutorial/core_tutorial.py | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index a89f228..1eacec3 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -189,9 +189,6 @@ if __name__ == "__main__":
+             face_mode=[True, True, False]
+         )
+ 
+-        '''
+-        grip is created but unable to render
+-        '''
+         brl_db.grip(
+             "grip.s",
+             center = (0, 5, 1),
+@@ -241,13 +238,11 @@ if __name__ == "__main__":
+         )
+         '''
+ 
+-        '''
+         brl_db.half(
+             "half.s",
+             norm = (0, 0, 1), 
+             d = -1
+         )
+-        '''
+ 
+         brl_db.region(
+             name="all.r",
+-- 
+2.14.3 (Apple Git-98)
+

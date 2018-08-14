@@ -1,0 +1,59 @@
+From 9700ed02bf947f502e8408f7e037555de1d9f56c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 13 Jul 2018 03:18:09 +0530
+Subject: [PATCH 24/47] Rounded rcc
+
+---
+ examples/rounder_rcc.py | 40 ----------------------------------------
+ 1 file changed, 40 deletions(-)
+ delete mode 100644 examples/rounder_rcc.py
+
+diff --git a/examples/rounder_rcc.py b/examples/rounder_rcc.py
+deleted file mode 100644
+index 0fc6a32..0000000
+--- a/examples/rounder_rcc.py
++++ /dev/null
+@@ -1,40 +0,0 @@
+-"""
+-This is the python version of sgi.sh using the python-brlcad module.
+-
+-usage:
+-    python sgi.py sgi.g
+-To Render : 
+-    rtedge -s 1024 -F output.pix sgi.g cube.r
+-    pix-png -s 1024 < output.pix > output.png
+-"""
+-
+-import sys
+-from brlcad.primitives import union
+-from draw_primitive import *
+-import brlcad.wdb as wdb
+-
+-def rounder_rcc(c_radius, c_length, rounding_radius):
+-    origin = (0, 0, 0)
+-    base   = (0, 0, rounding_radius)
+-    filler = (0, 0, c_length)
+-    top_tor = (0, 0, c_length - rounding_radius)
+-    height = (0, 0, c_length - 2 * rounding_radius)
+-    neg_z_dir, pos_z_dir = (0, 0, -1), (0, 0, 1)
+-    brl_db.rcc("cylinder.rcc", base, height, c_radius)
+-    brl_db.rcc("fillend.rcc", origin, filler, c_radius - rounding_radius)
+-    brl_db.torus("bottom.tor", base, neg_z_dir, c_radius - rounding_radius, rounding_radius)
+-    brl_db.torus("top.tor", top_tor, pos_z_dir, c_radius - rounding_radius, rounding_radius)
+-    union_list = ["cylinder.rcc", "fillend.rcc", "top.tor", "bottom.tor"]
+-    brl_db.combination(
+-        "cube.r",
+-        is_region=False,
+-        tree=union(union_list)
+-    )
+-
+-   
+-if __name__ == "__main__":
+-    argv = sys.argv
+-    union_list = []
+-    database_name = argv[1]
+-    brl_db = wdb.WDB(database_name, "fml.g")
+-    rounder_rcc(40, 100, 10)
+-- 
+2.14.3 (Apple Git-98)
+

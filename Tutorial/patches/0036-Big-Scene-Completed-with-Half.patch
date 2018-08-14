@@ -1,0 +1,52 @@
+From a3f2bb344958e2f0ad6b816c389a61e8154e0937 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 31 Jul 2018 20:32:33 +0530
+Subject: [PATCH 36/47] Big Scene Completed with Half
+
+---
+ Tutorial/abstract_tutorial.py |  2 ++
+ Tutorial/core_tutorial.py     | 11 +++++++----
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/Tutorial/abstract_tutorial.py b/Tutorial/abstract_tutorial.py
+index 7ca9cf1..e837136 100644
+--- a/Tutorial/abstract_tutorial.py
++++ b/Tutorial/abstract_tutorial.py
+@@ -135,6 +135,8 @@ def main():
+                 0.55, 4.45, 6.0125, 0.1, 0, 0.45,
+                 0.55, 4, 6.05, 0.1, 0, 0.45], brl_db)
+ 
++	draw_half('half.s', [0, 1, 0, 0], brl_db)
++
+ 	return
+ 
+ if __name__ == '__main__':
+diff --git a/Tutorial/core_tutorial.py b/Tutorial/core_tutorial.py
+index a26e091..f83e586 100644
+--- a/Tutorial/core_tutorial.py
++++ b/Tutorial/core_tutorial.py
+@@ -169,6 +169,13 @@ if __name__ == "__main__":
+                 [(0.55, 4, 6.05), 0.1, 0, 0.45],
+             ]
+         )
++
++        brl_db.half(
++            "half.s",
++            norm = (0, 0, 1), 
++            d = -1
++        )
++        
+         brl_db.region(
+             name="all.r",
+             tree=(
+@@ -199,7 +206,3 @@ if __name__ == "__main__":
+             shader="plastic {di .8 sp .2}",
+             rgb_color=(64, 180, 96)
+         )
+-
+-    with Database("test_wdb.g") as brl_db:
+-        for x in brl_db.ls():
+-            print brl_db.lookup(x)
+-- 
+2.14.3 (Apple Git-98)
+

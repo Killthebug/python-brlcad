@@ -1,0 +1,71 @@
+From 72d15322f006cb52b8e99df1ba959d8cd067d38f Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Wed, 11 Jul 2018 16:18:42 +0530
+Subject: [PATCH 22/47] Managed to drop 6 more lines
+
+---
+ examples/sgi.py | 38 ++++++++++++++++----------------------
+ 1 file changed, 16 insertions(+), 22 deletions(-)
+
+diff --git a/examples/sgi.py b/examples/sgi.py
+index 0c8985d..9e97bb0 100644
+--- a/examples/sgi.py
++++ b/examples/sgi.py
+@@ -57,38 +57,32 @@ def down(a, b, rcc_name, sph_name):
+ 
+ if __name__ == "__main__":
+     argv = sys.argv
++    union_list = []
+     database_name = argv[1]
+     # cube dimensions
+     i, j, radius = 1000, 800, 100
+     # starting position
+     x, y, z = 0, 0, 0
+     brl_db = wdb.WDB(database_name, "SGI.g")
+-    rcc_name_list, sph_name_list, union_list = [], [], []
++    forward_list, back_list = [100, 107, 114], [105, 109, 116]
++    up_list, down_list      = [104, 111, 115], [102, 106, 113]
++    right_list, left_list   = [103, 110, 117], [101, 108, 112]
+ 
+     for iterator in range (100, 118):
+         rcc_name, sph_name = "rcc." + str(iterator), "sph." + str(iterator)
+-        rcc_name_list.append(rcc_name)
+-        sph_name_list.append(sph_name)
+         union_list.extend((rcc_name, sph_name))
+-
+-    forward(100, i, rcc_name_list[0], sph_name_list[0])
+-    left(101, j, rcc_name_list[1], sph_name_list[1])
+-    down(102, i, rcc_name_list[2], sph_name_list[2])
+-    right(103, i, rcc_name_list[3], sph_name_list[3])
+-    up(104, j, rcc_name_list[4], sph_name_list[4])
+-    back(105, i, rcc_name_list[5], sph_name_list[5])
+-    down(106, i, rcc_name_list[6], sph_name_list[6])
+-    forward(107, i, rcc_name_list[7], sph_name_list[7])
+-    left(108, i, rcc_name_list[8], sph_name_list[8])
+-    back(109, i, rcc_name_list[9], sph_name_list[9])
+-    right(110, j, rcc_name_list[10], sph_name_list[10])
+-    up(111, i, rcc_name_list[11], sph_name_list[11])
+-    left(112, i, rcc_name_list[12], sph_name_list[12])
+-    down(113, j, rcc_name_list[13], sph_name_list[13])
+-    forward(114, i, rcc_name_list[14], sph_name_list[14])
+-    up(115, i, rcc_name_list[15], sph_name_list[15])
+-    back(116, j, rcc_name_list[16], sph_name_list[16])
+-    right(117, i, rcc_name_list[17], sph_name_list[17])
++        if iterator in forward_list:
++            forward(iterator, i, rcc_name, sph_name)
++        if iterator in back_list:
++            back(iterator, i, rcc_name, sph_name)
++        if iterator in up_list:
++            up(iterator, i, rcc_name, sph_name)
++        if iterator in down_list:
++            down(iterator, i, rcc_name, sph_name)
++        if iterator in right_list:
++            right(iterator, i, rcc_name, sph_name)
++        if iterator in left_list:
++            left(iterator, i, rcc_name, sph_name)
+ 
+     brl_db.combination(
+             "cube.r",
+-- 
+2.14.3 (Apple Git-98)
+

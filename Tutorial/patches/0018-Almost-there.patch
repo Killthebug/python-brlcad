@@ -1,0 +1,288 @@
+From ecf1c56718a3e118939063b39f2a3ae587fc7fb0 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 10 Jul 2018 09:10:42 +0530
+Subject: [PATCH 18/47] Almost there
+
+---
+ examples/proc_interpreter.py | 61 +++++++++++++++++++++++++++++++----------
+ examples/script.py           | 65 ++++++++++++++++++++++++++------------------
+ 2 files changed, 85 insertions(+), 41 deletions(-)
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index f3e3f7c..f0a8ae1 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -44,7 +44,15 @@ class Procedure():
+ 		self.proc_string = element
+ 		self.local_vars = {}
+ 		self.commands = self.proc_string.strip().split("\n")
+-		print(self.commands)
++		#print(self.commands)
++
++	def find_between(self, s, first, last):
++		try:
++			start = s.index( first ) + len( first )
++			end = s.index( last, start )
++			return s[start:end]
++		except ValueError:
++			return ""
+ 
+ 	def replace_vars(self, my_string):
+ 		'''
+@@ -52,11 +60,15 @@ class Procedure():
+ 		In case of having two variables with the same name, the local vars
+ 		are given precedence.
+ 		'''
++		print(my_string)
+ 		x = my_string
+-		for variable in global_vars:
+-			x = x.replace(variable, str(global_vars[variable]))
++		for variable in self.global_vars:
++			x = x.replace(variable, str(self.global_vars[variable]))
++			print(x)
++		print(self.local_vars)
+ 		for variable_name in self.local_vars:
+ 			x = x.replace(variable, str(self.local_vars[variable]))
++			print(x)
+ 		return x
+ 
+ 	def calculate_value(self, text):
+@@ -71,7 +83,8 @@ class Procedure():
+ 		result = interpreter.expr()
+ 		return float(result)
+ 
+-	def evaluate_exp(self, command):
++	def evaluate_exp(self, command, index):
++		calculated_value = 0.0
+ 		broken = command.split("[")
+ 		mystring = ""
+ 		'''
+@@ -87,15 +100,17 @@ class Procedure():
+ 		print('here')
+ 		for element in broken:
+ 			if "exp" in element:
+-				my_string = find_between(element, "exp", "]")
+-				text 	  = replace_vars(my_string)
+-				result    = calculate_value(text)
++				my_string = self.find_between(element, "exp", "]")
++				text 	  = self.replace_vars(my_string)
++				result    = self.calculate_value(text)
+ 				to_replace = "[" + element
+ 				command   = command.replace(to_replace.strip(), str(result))
++				calculated_value = float(result)
+ 				self.commands[index] = command
+-		return
++				print(command)
++		return calculated_value
+ 
+-	def set_var_value(self, command):
++	def set_var_value(self, command, index):
+ 		split_command = command.split()
+ 		variable_name = '$' + command[1]
+ 		if command[2].isdigit():
+@@ -106,27 +121,45 @@ class Procedure():
+ 			else:
+ 				self.local_vars[variable_name] = float(self.local_vars[command[2]])
+ 		else:
+-			value = evaluate_exp(command[2])
++			value = self.evaluate_exp(command[2], index)
+ 			self.local_vars[variable_name] = float(value)
+ 
+ 		return
+ 
+ 	def calculate_vars(self):
+-		for line_num, command in emumerate(self.commands):
++		for line_num, command in enumerate(self.commands):
+ 			element = command
+ 			element = element.split()
+ 			if element == []:			#Blank line
+ 				continue
+ 			command_type = element[0]
+ 			if command_type == "set": 
+-				set_var_value(command)
++				self.set_var_value(command, line_num)
+ 		return
+ 
++	def evaluate_in(self, command, index):
++		print(self.local_vars)
++		self.evaluate_exp(command, index)
++		print(elements)
++		return
++
++	def execute_in(self):
++		for line_num, command in enumerate(self.commands):
++			element = command.split()
++			if element == []:
++				continue
++			command_type = element[0]
++			if command_type == "in":
++				self.evaluate_in(command, line_num)
++
+ 	def execute(self, arguments):
++		print(arguments)
+ 		for x in zip(self.args, arguments):
+ 			var = '$' + str(x[0])
+ 			value = float(x[1])
++			print(var, value)
+ 			self.local_vars[var] = value
+ 		self.calculate_vars()
+-		#self.evaluate_exp()
+-		#self.execute_maps()
+\ No newline at end of file
++		self.execute_in()
++
++
+diff --git a/examples/script.py b/examples/script.py
+index 7224dc8..7091496 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -36,7 +36,7 @@ from arithematic_parser import *
+ from brlcad.primitives import *
+ 
+ global_vars = {}
+-script_procedures  = {}
++script_procedures = {}
+ 
+ def index_containing_substring(the_list, substring):
+ 	for i, s in enumerate(the_list):
+@@ -99,17 +99,17 @@ def check_parentheses(my_string):
+ 	'''
+ 	Return True if the parentheses in string s match, otherwise False.
+ 	'''
+-	j = 0
+-	for c in my_string:
+-		if c == '}':
+-			j -= 1
+-			if j < 0:
++	iterator_1 = 0
++	for iterator_2 in my_string:
++		if iterator_2 == '}':
++			iterator_1 -= 1
++			if iterator_1 < 0:
+ 				return False
+-		elif c == '{':
+-			j += 1
+-	return j == 0
++		elif iterator_2 == '{':
++			iterator_1 += 1
++	return iterator_1 == 0
+ 
+-def find_parentheses(s):
++def find_parentheses(my_string):
+ 	''' 
+ 	Find and return the location of the matching parentheses pairs in s.
+ 
+@@ -123,10 +123,10 @@ def find_parentheses(s):
+ 	'''
+ 	stack = []
+ 	parentheses_locs = {}
+-	for i, c in enumerate(s):
+-		if c == '(':
++	for i, iterator_1 in enumerate(my_string):
++		if iterator_1 == '(':
+ 			stack.append(i)
+-		elif c == ')':
++		elif iterator_1 == ')':
+ 			try:
+ 				parentheses_locs[stack.pop()] = i
+ 			except IndexError:
+@@ -146,15 +146,17 @@ def calculate_value(text):
+ 	result = interpreter.expr()
+ 	return float(result)
+ 
+-def evaluate_expressions(commands):
++def evaluate_expressions(commands, procs_end):
+ 	'''
+ 	This function is responsible for evaluating expressions like
+ 	exp{$i+$j} or exp{$i*{$j/$k}}.
+ 	It evaluated these expressions and replaces them with their
+ 	float result in the actual "commands" list
+ 	'''
+-	for index, command in enumerate(commands):
++	print(procs_end)
++	for index, command in enumerate(commands[procs_end:]):
+ 		if "exp" in command:
++			print(command)
+ 			broken = command.split("[")
+ 			mystring = ""
+ 			'''
+@@ -162,7 +164,6 @@ def evaluate_expressions(commands):
+ 			and evaluate any expressions that might be present.
+ 			Because that's how expressions are meant to be written
+ 			'''
+-			print('here')
+ 			for element in broken:
+ 				if "exp" in element:
+ 					'''
+@@ -201,6 +202,7 @@ def parse_procs(commands, proc_line_position):
+ 	It returns a list of all procedures called proc_list
+ 	'''
+ 	proc_list = []
++	procs_end = 0
+ 	print(proc_line_position)
+ 	for iterator in range(len(proc_line_position)):
+ 		proc_start = proc_line_position[iterator]
+@@ -216,16 +218,13 @@ def parse_procs(commands, proc_line_position):
+ 				temp_string += line
+ 				result = check_parentheses(temp_string)
+ 				if result:
+-					#print("end")
+-					#print(temp_string)
+-					print(line_number)
++					procs_end = proc_start+line_number+2 #This keeps track of the last line of proc definition
+ 					proc_span = [temp_string]
+ 					break
+ 
+ 		proc_string = " ".join(proc_span)
+-		print(proc_string.strip())				#debug
+ 		proc_list.append(proc_string.strip())
+-	return proc_list
++	return proc_list, procs_end
+ 
+ def initialize_procs(commands):
+ 	"""
+@@ -244,8 +243,9 @@ def initialize_procs(commands):
+ 		if command_type == "proc":
+ 			proc_line_position.append(iterator)
+ 
+-	proc_list = parse_procs(commands, proc_line_position)
++	proc_list, procs_end = parse_procs(commands, proc_line_position)
+ 	create_proc_objects(proc_list)
++	return procs_end
+ 
+ def parse_combination():
+ 	return
+@@ -278,14 +278,25 @@ def parse_primitive(command):
+ 
+ def parse_script(database_name, units, commands):
+ 	initalize_global_vars(commands)
+-	initialize_procs(commands)
+-	exit()
+-	evaluate_expressions(commands)
++	procs_end = initialize_procs(commands)
++	evaluate_expressions(commands, procs_end)
+ 
+-	for element in commands:
++	for element in commands[procs_end:]:
++		print(element)
+ 		element = element.split()
++		if element == []:
++			continue    					#Blank Line
+ 		command_type = element[0]
+-		switcher[command_type](element)
++		if command_type == 'in':
++			switcher[command_type](element)
++		else:
++			print("Executing Procedure : ", command_type)
++			for index, argument in enumerate(element[1:]):
++				if not argument.isdigit():
++					var_name = "$" + argument
++					element[index + 1] = str(global_vars[var_name])
++			script_procedures[command_type].execute(element[1:])
++
+ 
+ def draw_sphere(primitive_name, arguments):
+ 	center = [float(x) for x in arguments[:3]]
+-- 
+2.14.3 (Apple Git-98)
+

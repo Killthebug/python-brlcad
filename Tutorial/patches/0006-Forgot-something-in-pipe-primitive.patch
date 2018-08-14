@@ -1,0 +1,27 @@
+From 69ef46b7439b748b67894a647d7a5819a2b0454e Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 22:21:22 +0530
+Subject: [PATCH 06/47] Forgot something in pipe primitive
+
+---
+ examples/script.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/examples/script.py b/examples/script.py
+index 90297da..fd3e6c1 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -271,6 +271,10 @@ def draw_pipe(primitive_name, arguments):
+ 	for y in range(3):
+ 		point_10.append(float(arguments[57+y]))
+ 
++	points = [point_1, point_2, point_3, point_4, point_5, 
++			  point_6, point_7, point_8, point_9, point_10]
++
++	brl_db.pipe(primitive_name, points)
+ 
+ switcher = {"set" : parse_var,
+ 			"in"  : parse_primitive,
+-- 
+2.14.3 (Apple Git-98)
+

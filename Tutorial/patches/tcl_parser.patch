@@ -1,0 +1,1970 @@
+From ea16c163b48ff57b804d5a960d13384444ebbd5f Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 11:00:09 +0530
+Subject: [PATCH 02/47] Introduced Script Parser
+
+---
+ examples/script.py | 268 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 268 insertions(+)
+ create mode 100644 examples/script.py
+
+diff --git a/examples/script.py b/examples/script.py
+new file mode 100644
+index 0000000..5bc0e4a
+--- /dev/null
++++ b/examples/script.py
+@@ -0,0 +1,268 @@
++'''
++This is a python module that deals with tcl scripts to create procedural geometry
++
++Usage :
++		python script.py <<script_name>>.tcl <<database_name>>.g
++'''
++
++import argparse
++import errno
++import sys
++import os
++import brlcad.wdb as wdb
++from brlcad.primitives import *
++
++def parse_var():
++	return
++
++def parse_combination():
++	return
++
++def argument_check():
++	return
++
++def read_file(filename):
++	if not os.path.isfile(filename):
++		raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
++	file = open(filename).readlines()
++	return file
++
++
++def parse_primitive(command):
++	primitive_name = command[1]
++	primitive_type = command[2]
++	'''
++	Further functionality to parse variables will be included before this
++	step. To the draw_primitive function, only pure arguments will be
++	send, not variable
++	'''
++	primitive_map[primitive_type](primitive_name, command[3:])
++
++
++def parse_script(database_name, units, procedures):
++	for element in procedures:
++		element = element.split()
++		command_type = element[0]
++		switcher[command_type](element)
++
++def draw_sphere(primitive_name, arguments):
++	center = [float(x) for x in arguments[:3]]
++	radius = float(arguments[3])
++	brl_db.sphere(primitive_name, center, radius)
++	return
++
++def draw_rpp(primitive_name, arguments):
++	pmin = [float(x) for x in arguments[:3]]
++	pmax = [float(x) for x in arguments[3:]]
++	brl_db.rpp(primitive_name, pmin, pmax)
++	return
++
++def draw_wedge(primitive_name, arguments):
++	vertex = [float(x) for x in arguments[:3]]
++	x_dir  = [float(x) for x in arguments[3:6]]
++	z_dir  = [float(x) for x in arguments[6:9]]
++	x_len, y_len, z_len, x_top_len = arguments[9:]
++	brl_db.wedge(primitive_name, vertex, x_dir, z_dir,
++				 x_len, y_len, z_len, x_top_len)
++	return
++
++def draw_arb4(primitive_name, arguments):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:]]
++	brl_db.arb4(primitive_name, v1, v2, v3, v4)
++	return
++
++def draw_arb5(primitive_name, arguments):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:]]
++	brl_db.arb5(primitive_name, v1, v2, v3, v4, v5)
++	return
++
++def draw_arb6(primitive_name, arguments):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:]]
++	brl_db.arb6(primitive_name, v1, v2, v3, v4, v5, v6)
++	return
++
++def draw_arb7(primitive_name, arguments):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:18]]
++	v7 = [float(x) for x in arguments[18:]]	
++	brl_db.arb7(primitive_name, v1, v2, v3, v4, v5, v6, v7)
++	return
++
++def draw_arb8(primitive_name, arguments):
++	v1 = [float(x) for x in arguments[:3]]
++	v2 = [float(x) for x in arguments[3:6]]
++	v3 = [float(x) for x in arguments[6:9]]
++	v4 = [float(x) for x in arguments[9:12]]
++	v5 = [float(x) for x in arguments[12:15]]
++	v6 = [float(x) for x in arguments[15:18]]
++	v7 = [float(x) for x in arguments[18:21]]
++	v8 = [float(x) for x in arguments[21:]]
++	brl_db.arb8(primitive_name, v1, v2, v3, v4, v5, v6, v7, v8)
++	return
++
++def draw_ellipsoid(primitive_name, arguments):
++	center = [float(x) for x in arguments[:3]]
++	a      = [float(x) for x in arguments[3:6]]
++	b      = [float(x) for x in arguments[6:9]]
++	c      = [float(x) for x in arguments[9:]]
++	brl_db.ellipsoid(primitive_name, center, a, b, c)
++	return
++
++def draw_torus(primitive_name, arguments):
++	center = [float(x) for x in arguments[:3]]
++	n      = [float(x) for x in arguments[3:6]]
++	r_revolution = float(arguments[6])
++	r_cross      = float(arguments[7])
++	brl_db.torus(primitive_name, center, n,
++				 r_revolution, r_cross)
++	return
++
++def draw_rcc(primitive_name, arguments):
++	base   = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	radius = arguments[6]
++	brl_db.rcc(primitive_name, base, height, radius)
++	return
++
++def draw_tgc(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	a = [float(x) for x in arguments[6:9]]
++	b = [float(x) for x in arguments[9:12]]
++	c = [float(x) for x in arguments[12:15]]
++	d = [float(x) for x in arguments[15:]]
++	brl_db.tgc(primitive_name, base, height, a, b, c, d)
++	return
++
++def draw_cone(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	n    = [float(x) for x in arguments[3:6]]
++	h, r_base, r_top = [float(x) for x in arguments[6:]]
++	brl_db.cone(primitive_name, base, n, h, r_base, r_top)
++	return
++
++def draw_trc(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	r_base, r_top = [float(x) for x in arguments[6:]]
++	brl_db.trc(primitive_name, base, height, r_base, r_top)
++	return
++
++def draw_rpc(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	breadth = [float(x) for x in arguments[6:9]]
++	half_width = arguments[9]
++	brl_db.rpc(primitive_name, base, height, breadth, half_width)
++	return
++
++def draw_rhc(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	breadth = [float(x) for x in arguments[6:9]]
++	half_width, asymptote = [float(x) for x in arguments[9:]]
++	brl_db.rhc(primitive_name, base, height, breadth, half_width, asymptote)
++	return
++
++def draw_epa(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	n_major = [float(x) for x in arguments[6:9]]
++	r_major, r_minor = [float(x) for x in arguments[9:]]
++	brl_db.epa(primitive_name, base, height, n_major, r_major, r_minor)
++	return
++
++def draw_ehy(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	n_major = [float(x) for x in arguments[6:9]]
++	r_major, r_minor, asymptote = [float(x) for x in arguments[9:]]
++	brl_db.ehy(primitive_name, base, height, n_major,
++			   r_major, r_minor, asymptote)
++	return
++
++def draw_hyperboloid(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	a = [float(x) for x in arguments[6:9]]
++	b_mag, base_neck_ratio = [float(x) for x in arguments[9:]]
++	brl_db.hyperboloid(primitive_name, base, height, a,
++					   b_mag, base_neck_ratio)
++	return
++
++def draw_eto(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	n = [float(x) for x in arguments[3:6]]
++	s_major = [float(x) for x in arguments[6:9]]
++	r_revolution, r_minor = [float(x) for x in arguments[9:]]
++	brl_db.eto(primitive_name, base, n, s_major,
++			   r_revolution, r_minor)
++	return
++
++def draw_arbn(primitive_name, arguments):
++	return
++
++def draw_particle(primitive_name, arguments):
++	base = [float(x) for x in arguments[:3]]
++	height = [float(x) for x in arguments[3:6]]
++	r_base, r_end = arguments[6:]
++	brl_db.particle(primitive_name, base, height, r_base, r_end)
++	return
++
++def draw_pipe(primitive_name, arguments):
++	return
++
++switcher = {"set" : parse_var,
++			"in"  : parse_primitive,
++			"comb": parse_combination}
++
++primitive_map = {"sph"   : draw_sphere,
++				 "rpp"   : draw_rpp,
++				 "wedge" : draw_wedge,
++				 "arb4"  : draw_arb4,
++				 "arb5"  : draw_arb5,
++				 "arb6"  : draw_arb6,
++				 "arb7"  : draw_arb7,
++				 "arb8"  : draw_arb8,
++				 "ell"   : draw_ellipsoid,
++				 "tor"   : draw_torus,
++				 "rcc"   : draw_rcc,
++				 "tgc"   : draw_tgc,
++				 "cone"  : draw_cone,
++				 "trc"   : draw_trc,
++				 "rpc"   : draw_rpc,
++				 "rhc"   : draw_rhc,
++				 "epa"   : draw_epa,
++				 "ehy"   : draw_ehy,
++				 "hyp"   : draw_hyperboloid,
++				 "eto"   : draw_eto,
++				 "arbn"  : draw_arbn,
++				 "part"  : draw_particle,
++				 "pipe"  : draw_pipe}	
++
++
++if __name__ == "__main__":
++	argv = sys.argv
++	procedures = read_file(argv[1])
++	database_name = ' '.join(procedures[0].split()[1:])
++	units = procedures[1].split()[1]
++	procedures = procedures[2:]
++	brl_db = wdb.WDB(database_name, "db.g")
++	parse_script(database_name, units, procedures)
++
+-- 
+2.14.3 (Apple Git-98)
+
+
+From e7327bfc9f2bb16d764bbabed788f275ea9c0c6c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 11:44:06 +0530
+Subject: [PATCH 03/47] Arbn introduced
+
+---
+ examples/script.py | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/examples/script.py b/examples/script.py
+index 5bc0e4a..2a308ff 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -216,6 +216,20 @@ def draw_eto(primitive_name, arguments):
+ 	return
+ 
+ def draw_arbn(primitive_name, arguments):
++	plane_1 = [tuple([float(x) for x in arguments[:3]])]
++	plane_1.append(float(arguments[3]))
++	plane_2 = [tuple([float(x) for x in arguments[4:7]])]
++	plane_2.append(float(arguments[7]))
++	plane_3 = [tuple([float(x) for x in arguments[8:11]])]
++	plane_3.append(float(arguments[11]))
++	plane_4 = [tuple([float(x) for x in arguments[12:15]])]
++	plane_4.append(float(arguments[15]))
++	plane_5 = [tuple([float(x) for x in arguments[16:19]])]
++	plane_5.append(float(arguments[19]))
++	plane_6 = [tuple([float(x) for x in arguments[20:23]])]
++	plane_6.append(float(arguments[23]))
++	planes = [plane_1, plane_2, plane_3, plane_4, plane_5, plane_6]
++	brl_db.arbn(primitive_name, planes)
+ 	return
+ 
+ def draw_particle(primitive_name, arguments):
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 951a2e33ebc69ac4820691af56491938768921ce Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 15:32:47 +0530
+Subject: [PATCH 04/47] Sample tcl script
+
+---
+ examples/temp.tcl | 3 +++
+ 1 file changed, 3 insertions(+)
+ create mode 100644 examples/temp.tcl
+
+diff --git a/examples/temp.tcl b/examples/temp.tcl
+new file mode 100644
+index 0000000..0760730
+--- /dev/null
++++ b/examples/temp.tcl
+@@ -0,0 +1,3 @@
++title db.g
++units mm
++in planes.s arbn 0 0 -1 -8 0 0 1 9 -1 0 0 0.5 1 0 0 0.5 0 -1 0 0.5 0 1 0 0.5
+\ No newline at end of file
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 35386fe93eafe0a7c39e73c1169c32114fee4727 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 22:04:23 +0530
+Subject: [PATCH 05/47] introduced pipe primitive
+
+---
+ examples/script.py | 32 +++++++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/examples/script.py b/examples/script.py
+index 2a308ff..90297da 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -240,7 +240,37 @@ def draw_particle(primitive_name, arguments):
+ 	return
+ 
+ def draw_pipe(primitive_name, arguments):
+-	return
++	point_1 = [tuple(float(x) for x in arguments[:3])]
++	for y in range(3):
++		point_1.append(float(arguments[3+y]))
++	point_2 = [tuple(float(x) for x in arguments[6:9])]
++	for y in range(3):
++		point_2.append(float(arguments[9+y]))
++	point_3 = [tuple(float(x) for x in arguments[12:15])]
++	for y in range(3):
++		point_3.append(float(arguments[15+y]))
++	point_4 = [tuple(float(x) for x in arguments[18:21])]
++	for y in range(3):
++		point_4.append(float(arguments[21+y]))
++	point_5 = [tuple(float(x) for x in arguments[24:27])]
++	for y in range(3):
++		point_5.append(float(arguments[27+y]))
++	point_6 = [tuple(float(x) for x in arguments[30:33])]
++	for y in range(3):
++		point_6.append(float(arguments[33+y]))
++	point_7 = [tuple(float(x) for x in arguments[36:39])]
++	for y in range(3):
++		point_7.append(float(arguments[39+y]))
++	point_8 = [tuple(float(x) for x in arguments[42:45])]
++	for y in range(3):
++		point_8.append(float(arguments[45+y]))
++	point_9 = [tuple(float(x) for x in arguments[48:51])]
++	for y in range(3):
++		point_9.append(float(arguments[51+y]))
++	point_10 = [tuple(float(x) for x in arguments[54:57])]
++	for y in range(3):
++		point_10.append(float(arguments[57+y]))
++
+ 
+ switcher = {"set" : parse_var,
+ 			"in"  : parse_primitive,
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 69ef46b7439b748b67894a647d7a5819a2b0454e Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 22 Jun 2018 22:21:22 +0530
+Subject: [PATCH 06/47] Forgot something in pipe primitive
+
+---
+ examples/script.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/examples/script.py b/examples/script.py
+index 90297da..fd3e6c1 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -271,6 +271,10 @@ def draw_pipe(primitive_name, arguments):
+ 	for y in range(3):
+ 		point_10.append(float(arguments[57+y]))
+ 
++	points = [point_1, point_2, point_3, point_4, point_5, 
++			  point_6, point_7, point_8, point_9, point_10]
++
++	brl_db.pipe(primitive_name, points)
+ 
+ switcher = {"set" : parse_var,
+ 			"in"  : parse_primitive,
+-- 
+2.14.3 (Apple Git-98)
+
+
+From fb1c79d10d81e7e57e4c5dea732d92f688c8e311 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Sat, 23 Jun 2018 11:04:58 +0530
+Subject: [PATCH 07/47] Basic variable parsing introduced
+
+---
+ examples/script.py | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/examples/script.py b/examples/script.py
+index fd3e6c1..24880fe 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -12,9 +12,29 @@ import os
+ import brlcad.wdb as wdb
+ from brlcad.primitives import *
+ 
+-def parse_var():
++global_vars = {}
++
++def parse_var(command):
++	var_name = str(command[1])
++	var_val  = float(command[2])
++	global_vars[var_name] = var_val
+ 	return
+ 
++def check_vars(command):
++	'''
++	The +3 here is to account for the first three words in a tcl command
++	Eg : 
++	set i 1
++	set j 5
++	in ball.s sph i 2 j 0.75
++
++	would return
++	in ball.s sph 1 2 5 0.75
++	'''
++	for iterator in range(len(command[3:])):
++		if str(command[iterator+3]) in global_vars:
++			command[iterator+3] = global_vars[str(command[iterator+3])]
++
+ def parse_combination():
+ 	return
+ 
+@@ -31,6 +51,8 @@ def read_file(filename):
+ def parse_primitive(command):
+ 	primitive_name = command[1]
+ 	primitive_type = command[2]
++	check_vars(command)
++	print(command)
+ 	'''
+ 	Further functionality to parse variables will be included before this
+ 	step. To the draw_primitive function, only pure arguments will be
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 701eca23a9acfd008d85707319a18b125c32b15d Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Sun, 24 Jun 2018 10:59:14 +0530
+Subject: [PATCH 08/47] $ sign for variable substitution
+
+---
+ examples/script.py | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/examples/script.py b/examples/script.py
+index 24880fe..7eb3839 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -15,7 +15,7 @@ from brlcad.primitives import *
+ global_vars = {}
+ 
+ def parse_var(command):
+-	var_name = str(command[1])
++	var_name = "$"+str(command[1])
+ 	var_val  = float(command[2])
+ 	global_vars[var_name] = var_val
+ 	return
+@@ -41,6 +41,9 @@ def parse_combination():
+ def argument_check():
+ 	return
+ 
++def primitive_union():
++	return
++
+ def read_file(filename):
+ 	if not os.path.isfile(filename):
+ 		raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+@@ -51,7 +54,7 @@ def read_file(filename):
+ def parse_primitive(command):
+ 	primitive_name = command[1]
+ 	primitive_type = command[2]
+-	check_vars(command)
++	check_vars(command)					#Replace any variables with constants
+ 	print(command)
+ 	'''
+ 	Further functionality to parse variables will be included before this
+@@ -300,6 +303,7 @@ def draw_pipe(primitive_name, arguments):
+ 
+ switcher = {"set" : parse_var,
+ 			"in"  : parse_primitive,
++			"u"	  : primitive_union,
+ 			"comb": parse_combination}
+ 
+ primitive_map = {"sph"   : draw_sphere,
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 342008d213c45f3fcd55666c63746cf6f1c6271b Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 26 Jun 2018 12:42:27 +0530
+Subject: [PATCH 09/47] Writing proc finder and interpreter
+
+---
+ examples/proc_interpreter.py | 45 +++++++++++++++++++++++++
+ examples/script.py           | 79 ++++++++++++++++++++++++++++++++++++--------
+ 2 files changed, 111 insertions(+), 13 deletions(-)
+ create mode 100644 examples/proc_interpreter.py
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+new file mode 100644
+index 0000000..2d899d3
+--- /dev/null
++++ b/examples/proc_interpreter.py
+@@ -0,0 +1,45 @@
++"""
++Procedure interpreter for the script parser.
++
++Procedural geometry, as the name suggests reusing certain procedures to
++create geometry. These procedures are embedded in the script as "functions".
++
++proc_interpreter.py is responsible for interpreting procedures and working
++with them when invoked.
++
++A sample procedure might look like :
++-------------------------------------------------------------
++proc right {a b} {
++	set old $x
++	set x [expr {$old + $b}]
++	in rcc.$a rcc $old $y $z [exp{$x - $old}] 0 0 $radius
++	in sph.$a sph $x $y $z $radius
++}
++
++right 100 $i 					#Procedure call
++-------------------------------------------------------------
++
++Currently the proc_interpreter can
++**
++**
++**
++**
++**
++"""
++
++import sys
++import re
++import os
++
++class Procudre():
++	"""
++	Common class for all procedures.
++	Each unique procedure is an instance of this class
++	"""
++
++	def __init__(self, proc_name, global_vars):
++		self.name = proc_name
++		self.global_vars = global_vars
++
++	def initialize(self):
++
+diff --git a/examples/script.py b/examples/script.py
+index 7eb3839..f07243b 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -3,6 +3,11 @@ This is a python module that deals with tcl scripts to create procedural geometr
+ 
+ Usage :
+ 		python script.py <<script_name>>.tcl <<database_name>>.g
++
++Assumptions :
++** Global vars are all defined before all commands
++** There are no undefined varaibles referenced anywhere in the script
++** 
+ '''
+ 
+ import argparse
+@@ -13,6 +18,7 @@ import brlcad.wdb as wdb
+ from brlcad.primitives import *
+ 
+ global_vars = {}
++script_procedures  = {}
+ 
+ def parse_var(command):
+ 	var_name = "$"+str(command[1])
+@@ -35,6 +41,48 @@ def check_vars(command):
+ 		if str(command[iterator+3]) in global_vars:
+ 			command[iterator+3] = global_vars[str(command[iterator+3])]
+ 
++def initalize_global_vars(commands):
++	for element in commands:
++		element = element.split()
++		if element == []:			#Blank line
++			continue
++		command_type = element[0]
++		if command_type == "set": 
++			switcher[command_type](element)
++
++def parse_procs(commands, proc_line_position):
++	for iterator in range(len(proc_line_position)):
++		proc_start = proc_line_position[iterator]
++		if iterator != len(proc_line_position) - 1 :  #Checking if this is the last proc defintion
++			proc_end = iterator + 1
++			proc_span = commands[proc_start : proc_end]
++		else :
++			proc_end = -1
++			proc_span = commands[proc_start:]
++
++		proc_string = " ".join(proc_span)
++		print(proc_string)
++
++
++def initialize_procs(commands):
++	"""
++	Here we iterate over the script based on line numbers
++	because we're uncertain about how big/small a proc is
++	and we'll need to be skipping multiple lines after we
++	parse each proc
++	"""
++	proc_line_position = []  		#Keeps tracks of lines numbers of proc definiton
++	
++	for iterator in range(len(commands)):
++		element = commands[iterator].split()
++		if element == []:			#Blank line
++			continue
++		command_type = element[0]
++		if command_type == "proc":
++			proc_line_position.append(iterator)
++
++	parse_procs(commands, proc_line_position)
++
+ def parse_combination():
+ 	return
+ 
+@@ -64,8 +112,12 @@ def parse_primitive(command):
+ 	primitive_map[primitive_type](primitive_name, command[3:])
+ 
+ 
+-def parse_script(database_name, units, procedures):
+-	for element in procedures:
++def parse_script(database_name, units, commands):
++	initalize_global_vars(commands)
++	initialize_procs(commands)
++	exit()
++
++	for element in commands:
+ 		element = element.split()
+ 		command_type = element[0]
+ 		switcher[command_type](element)
+@@ -143,17 +195,17 @@ def draw_arb8(primitive_name, arguments):
+ 
+ def draw_ellipsoid(primitive_name, arguments):
+ 	center = [float(x) for x in arguments[:3]]
+-	a      = [float(x) for x in arguments[3:6]]
+-	b      = [float(x) for x in arguments[6:9]]
+-	c      = [float(x) for x in arguments[9:]]
++	a	  = [float(x) for x in arguments[3:6]]
++	b	  = [float(x) for x in arguments[6:9]]
++	c	  = [float(x) for x in arguments[9:]]
+ 	brl_db.ellipsoid(primitive_name, center, a, b, c)
+ 	return
+ 
+ def draw_torus(primitive_name, arguments):
+ 	center = [float(x) for x in arguments[:3]]
+-	n      = [float(x) for x in arguments[3:6]]
++	n	  = [float(x) for x in arguments[3:6]]
+ 	r_revolution = float(arguments[6])
+-	r_cross      = float(arguments[7])
++	r_cross	  = float(arguments[7])
+ 	brl_db.torus(primitive_name, center, n,
+ 				 r_revolution, r_cross)
+ 	return
+@@ -177,7 +229,7 @@ def draw_tgc(primitive_name, arguments):
+ 
+ def draw_cone(primitive_name, arguments):
+ 	base = [float(x) for x in arguments[:3]]
+-	n    = [float(x) for x in arguments[3:6]]
++	n	= [float(x) for x in arguments[3:6]]
+ 	h, r_base, r_top = [float(x) for x in arguments[6:]]
+ 	brl_db.cone(primitive_name, base, n, h, r_base, r_top)
+ 	return
+@@ -304,6 +356,7 @@ def draw_pipe(primitive_name, arguments):
+ switcher = {"set" : parse_var,
+ 			"in"  : parse_primitive,
+ 			"u"	  : primitive_union,
++			"proc": parse_procs,
+ 			"comb": parse_combination}
+ 
+ primitive_map = {"sph"   : draw_sphere,
+@@ -333,10 +386,10 @@ primitive_map = {"sph"   : draw_sphere,
+ 
+ if __name__ == "__main__":
+ 	argv = sys.argv
+-	procedures = read_file(argv[1])
+-	database_name = ' '.join(procedures[0].split()[1:])
+-	units = procedures[1].split()[1]
+-	procedures = procedures[2:]
++	commands = read_file(argv[1])
++	database_name = ' '.join(commands[0].split()[1:])
++	units = commands[1].split()[1]
++	commands = commands[2:]
+ 	brl_db = wdb.WDB(database_name, "db.g")
+-	parse_script(database_name, units, procedures)
++	parse_script(database_name, units, commands)
+ 
+-- 
+2.14.3 (Apple Git-98)
+
+
+From b2bb4eb9ba4c830e17c80743310af31fa544205a Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 26 Jun 2018 13:16:41 +0530
+Subject: [PATCH 10/47] Assumptions and workflow updated
+
+---
+ examples/script.py | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/examples/script.py b/examples/script.py
+index f07243b..ebf186b 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -7,7 +7,23 @@ Usage :
+ Assumptions :
+ ** Global vars are all defined before all commands
+ ** There are no undefined varaibles referenced anywhere in the script
++** All global variables are defined the first proc definition
+ ** 
++
++How the script parser works :
++** Read script
++** Parse global variables
++** Parse proc (procedures)
++	** Every proc is an object of the procedure class (proc_interpreter.py)
++	** Intialization takes place with proc_name and global vars passed to the object
++** Parse in commands and proc calls in parallel
++** Proc calls:
++	** Substitue value of of global vars in commands in procs
++	** Calculate value of local variables
++		** Value of local variables can depend on global variables or passed arguments
++	** Replace all variables in the proc with their constant values
++	** Return a list of commands (Eg : in sph.s sph ...) from the prob objects
++** In a serial order draw all the shapes as required from this script module.
+ '''
+ 
+ import argparse
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 96bb92a66608d161eef671e32c790f118b4bcb7f Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 26 Jun 2018 16:00:04 +0530
+Subject: [PATCH 11/47] Proc searching and global variable parsing works
+
+---
+ examples/script.py | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/examples/script.py b/examples/script.py
+index ebf186b..abf327d 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -36,6 +36,12 @@ from brlcad.primitives import *
+ global_vars = {}
+ script_procedures  = {}
+ 
++def index_containing_substring(the_list, substring):
++	for i, s in enumerate(the_list):
++		if substring in s:
++			  return i
++	return -1
++
+ def parse_var(command):
+ 	var_name = "$"+str(command[1])
+ 	var_val  = float(command[2])
+@@ -58,27 +64,34 @@ def check_vars(command):
+ 			command[iterator+3] = global_vars[str(command[iterator+3])]
+ 
+ def initalize_global_vars(commands):
+-	for element in commands:
++	first_proc_line = index_containing_substring(commands, "proc")
++	for iterator in range(0, first_proc_line):
++		element = commands[iterator]
+ 		element = element.split()
+ 		if element == []:			#Blank line
+ 			continue
+ 		command_type = element[0]
+ 		if command_type == "set": 
+ 			switcher[command_type](element)
++	print(global_vars)				#debug
+ 
+ def parse_procs(commands, proc_line_position):
++	proc_list = []
++	print(proc_line_position)
+ 	for iterator in range(len(proc_line_position)):
+ 		proc_start = proc_line_position[iterator]
++
+ 		if iterator != len(proc_line_position) - 1 :  #Checking if this is the last proc defintion
+-			proc_end = iterator + 1
++			proc_end = proc_line_position[iterator + 1]
+ 			proc_span = commands[proc_start : proc_end]
+ 		else :
+ 			proc_end = -1
+ 			proc_span = commands[proc_start:]
+ 
+ 		proc_string = " ".join(proc_span)
+-		print(proc_string)
+-
++		print(proc_string.strip())				#debug
++		proc_list.append(proc_string.strip())
++	return proc_list
+ 
+ def initialize_procs(commands):
+ 	"""
+@@ -97,7 +110,7 @@ def initialize_procs(commands):
+ 		if command_type == "proc":
+ 			proc_line_position.append(iterator)
+ 
+-	parse_procs(commands, proc_line_position)
++	proc_list = parse_procs(commands, proc_line_position)
+ 
+ def parse_combination():
+ 	return
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 1e67221f8d25511e1e18ae521fda2b0c9700d98b Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Thu, 28 Jun 2018 11:46:09 +0530
+Subject: [PATCH 12/47] Procedure strings parsed and arguments retrieved
+
+---
+ examples/proc_interpreter.py | 5 +++--
+ examples/script.py           | 9 +++++++++
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index 2d899d3..812a07c 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -20,7 +20,7 @@ right 100 $i 					#Procedure call
+ -------------------------------------------------------------
+ 
+ Currently the proc_interpreter can
+-**
++** _do nothing_
+ **
+ **
+ **
+@@ -37,8 +37,9 @@ class Procudre():
+ 	Each unique procedure is an instance of this class
+ 	"""
+ 
+-	def __init__(self, proc_name, global_vars):
++	def __init__(self, proc_name, proc_args, global_vars):
+ 		self.name = proc_name
++		self.args = proc_args
+ 		self.global_vars = global_vars
+ 
+ 	def initialize(self):
+diff --git a/examples/script.py b/examples/script.py
+index abf327d..b80194b 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -75,6 +75,14 @@ def initalize_global_vars(commands):
+ 			switcher[command_type](element)
+ 	print(global_vars)				#debug
+ 
++def create_proc_objects(proc_list):
++	for element in proc_list:
++		temp_list = element.split("\n")[0]
++		proc_name = temp_list.split()[1]
++		proc_args = temp_list.split("{")[1].split('}')[0].split()
++		print(proc_args)											#debug
++		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars)
++
+ def parse_procs(commands, proc_line_position):
+ 	proc_list = []
+ 	print(proc_line_position)
+@@ -111,6 +119,7 @@ def initialize_procs(commands):
+ 			proc_line_position.append(iterator)
+ 
+ 	proc_list = parse_procs(commands, proc_line_position)
++	create_proc_objects(proc_list)
+ 
+ def parse_combination():
+ 	return
+-- 
+2.14.3 (Apple Git-98)
+
+
+From d7764cc24c8f91427554fa0bae4788a07a8e3480 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 3 Jul 2018 12:50:24 +0530
+Subject: [PATCH 13/47] Parsing expressions now
+
+---
+ examples/arithematic_parser.py | 202 +++++++++++++++++++++++++++++++++++++++++
+ examples/proc_interpreter.py   |   8 +-
+ examples/script.py             |  65 ++++++++++++-
+ 3 files changed, 266 insertions(+), 9 deletions(-)
+ create mode 100644 examples/arithematic_parser.py
+
+diff --git a/examples/arithematic_parser.py b/examples/arithematic_parser.py
+new file mode 100644
+index 0000000..9bde792
+--- /dev/null
++++ b/examples/arithematic_parser.py
+@@ -0,0 +1,202 @@
++from __future__ import division
++
++import os
++import sys
++import re
++
++
++INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF, DECIMAL = (
++    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', 'EOF', '.'
++)
++
++
++class Token(object):
++    def __init__(self, type, value):
++        self.type = type
++        self.value = value
++
++    def __str__(self):
++        """String representation of the class instance.
++
++        Examples:
++            Token(INTEGER, 3)
++            Token(PLUS, '+')
++            Token(MUL, '*')
++        """
++        return 'Token({type}, {value})'.format(
++            type=self.type,
++            value=repr(self.value)
++        )
++
++    def __repr__(self):
++        return self.__str__()
++
++
++class Lexer(object):
++    def __init__(self, text):
++        # client string input, e.g. "4 + 2 * 3 - 6 / 2"
++        self.text = text
++        # self.pos is an index into self.text
++        self.pos = 0
++        self.current_char = self.text[self.pos]
++
++    def error(self):
++        raise Exception('Invalid character')
++
++    def advance(self):
++        """Advance the `pos` pointer and set the `current_char` variable."""
++        self.pos += 1
++        if self.pos > len(self.text) - 1:
++            self.current_char = None  # Indicates end of input
++        else:
++            self.current_char = self.text[self.pos]
++
++    def skip_whitespace(self):
++        while self.current_char is not None and self.current_char.isspace():
++            self.advance()
++
++    def integer(self):
++        """Return a (multidigit) integer consumed from the input."""
++        result = ''
++        while self.current_char is not None and self.current_char.isdigit() or self.current_char == '.':
++            result += self.current_char
++            self.advance()
++        return float(result)
++
++    def get_next_token(self):
++        """Lexical analyzer (also known as scanner or tokenizer)
++
++        This method is responsible for breaking a sentence
++        apart into tokens. One token at a time.
++        """
++        while self.current_char is not None:
++
++            if self.current_char.isspace():
++                self.skip_whitespace()
++                continue
++
++            if self.current_char.isdigit():
++                return Token(INTEGER, self.integer())
++
++            if self.current_char == '.':
++                return Token(INTEGER, self.integer())
++
++            if self.current_char == '+':
++                self.advance()
++                return Token(PLUS, '+')
++
++            if self.current_char == '-':
++                self.advance()
++                return Token(MINUS, '-')
++
++            if self.current_char == '*':
++                self.advance()
++                return Token(MUL, '*')
++
++            if self.current_char == '/':
++                self.advance()
++                return Token(DIV, '/')
++
++            if self.current_char == '(':
++                self.advance()
++                return Token(LPAREN, '(')
++
++            if self.current_char == ')':
++                self.advance()
++                return Token(RPAREN, ')')
++
++            self.error()
++
++        return Token(EOF, None)
++
++
++class Interpreter(object):
++    def __init__(self, lexer):
++        self.lexer = lexer
++        # set current token to the first token taken from the input
++        self.current_token = self.lexer.get_next_token()
++
++    def error(self):
++        raise Exception('Invalid syntax')
++
++    def eat(self, token_type):
++        # compare the current token type with the passed token
++        # type and if they match then "eat" the current token
++        # and assign the next token to the self.current_token,
++        # otherwise raise an exception.
++        if self.current_token.type == token_type:
++            self.current_token = self.lexer.get_next_token()
++        else:
++            self.error()
++
++    def factor(self):
++        """factor : INTEGER | LPAREN expr RPAREN"""
++        token = self.current_token
++        if token.type == INTEGER:
++            self.eat(INTEGER)
++            return token.value
++        elif token.type == LPAREN:
++            self.eat(LPAREN)
++            result = self.expr()
++            self.eat(RPAREN)
++            return result
++
++    def term(self):
++        """term : factor ((MUL | DIV) factor)*"""
++        result = self.factor()
++
++        while self.current_token.type in (MUL, DIV):
++            token = self.current_token
++            if token.type == MUL:
++                self.eat(MUL)
++                result = result * self.factor()
++            elif token.type == DIV:
++                self.eat(DIV)
++                result = result / self.factor()
++
++        return result
++
++    def expr(self):
++        """Arithmetic expression parser / interpreter.
++
++        calc> 7 + 3 * (10 / (12 / (3 + 1) - 1))
++        22
++        
++        Rules : 
++        expr   : term ((PLUS | MINUS) term)*
++        term   : factor ((MUL | DIV) factor)*
++        factor : INTEGER | LPAREN expr RPAREN
++        """
++        result = self.term()
++
++        while self.current_token.type in (PLUS, MINUS):
++            token = self.current_token
++            if token.type == PLUS:
++                self.eat(PLUS)
++                result = result + self.term()
++            elif token.type == MINUS:
++                self.eat(MINUS)
++                result = result - self.term()
++
++        return result
++
++
++def main():
++    while True:
++        try:
++            try:
++                text = raw_input('calc> ')
++            except NameError:  # Python3
++                text = input('calc> ')
++        except EOFError:
++            break
++        if not text:
++            continue
++        lexer = Lexer(text)
++        interpreter = Interpreter(lexer)
++        result = interpreter.expr()
++        print(result)
++
++
++if __name__ == '__main__':
++    main()
+\ No newline at end of file
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index 812a07c..a1b1e49 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -31,16 +31,14 @@ import sys
+ import re
+ import os
+ 
+-class Procudre():
++class Procedure():
+ 	"""
+ 	Common class for all procedures.
+ 	Each unique procedure is an instance of this class
+ 	"""
+ 
+-	def __init__(self, proc_name, proc_args, global_vars):
++	def __init__(self, proc_name, proc_args, global_vars, element):
+ 		self.name = proc_name
+ 		self.args = proc_args
+ 		self.global_vars = global_vars
+-
+-	def initialize(self):
+-
++		self.proc_string = element
+\ No newline at end of file
+diff --git a/examples/script.py b/examples/script.py
+index b80194b..ba78997 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -25,12 +25,14 @@ How the script parser works :
+ 	** Return a list of commands (Eg : in sph.s sph ...) from the prob objects
+ ** In a serial order draw all the shapes as required from this script module.
+ '''
+-
++from __future__ import division
+ import argparse
+ import errno
+ import sys
+ import os
+ import brlcad.wdb as wdb
++from proc_interpreter import Procedure
++from arithematic_parser import *
+ from brlcad.primitives import *
+ 
+ global_vars = {}
+@@ -40,7 +42,21 @@ def index_containing_substring(the_list, substring):
+ 	for i, s in enumerate(the_list):
+ 		if substring in s:
+ 			  return i
+-	return -1
++	return len(the_list)
++
++def find_between(s, first, last):
++    try:
++        start = s.index( first ) + len( first )
++        end = s.index( last, start )
++        return s[start:end]
++    except ValueError:
++        return ""
++
++def replace_vars(my_string):
++	x = my_string
++	for variable in global_vars:
++		x = x.replace(variable, str(global_vars[variable]))
++	return x
+ 
+ def parse_var(command):
+ 	var_name = "$"+str(command[1])
+@@ -73,7 +89,46 @@ def initalize_global_vars(commands):
+ 		command_type = element[0]
+ 		if command_type == "set": 
+ 			switcher[command_type](element)
+-	print(global_vars)				#debug
++
++def calculate_value(text):
++	print(text)
++	text = text.replace("{", "(")
++	text = text.replace("}", ")")
++	text = text.strip()
++	lexer = Lexer(text)
++	interpreter = Interpreter(lexer)
++	result = interpreter.expr()
++	print(result)
++	return float(result)
++
++def evaluate_expressions(commands):
++	print("ERE")
++	for command in commands:
++		if "exp" in command:
++			broken = command.split("[")
++			mystring = ""
++			'''
++			We iterate over any every command after its split at "["
++			and evaluate any expressions that might be present.
++			Because that's how expressions are meant to be written
++			'''
++			for element in broken:
++				if "exp" in element:
++					'''
++					mystring now holds the the text contained within an expression
++					Eg : 
++					> [exp{$j - $i}]
++					> mystring = {$j - $i}
++					'''
++					my_string = find_between(element, "exp", "]")
++					text = replace_vars(my_string)
++					result = calculate_value(text)
++					to_replace = "[" + element
++					print(to_replace)
++					command = command.replace(to_replace.strip(), str(result))
++					print(command)
++
++
+ 
+ def create_proc_objects(proc_list):
+ 	for element in proc_list:
+@@ -81,7 +136,8 @@ def create_proc_objects(proc_list):
+ 		proc_name = temp_list.split()[1]
+ 		proc_args = temp_list.split("{")[1].split('}')[0].split()
+ 		print(proc_args)											#debug
+-		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars)
++		print("Creating Object for each procedure now")
++		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars, element)
+ 
+ def parse_procs(commands, proc_line_position):
+ 	proc_list = []
+@@ -153,6 +209,7 @@ def parse_primitive(command):
+ def parse_script(database_name, units, commands):
+ 	initalize_global_vars(commands)
+ 	initialize_procs(commands)
++	evaluate_expressions(commands)
+ 	exit()
+ 
+ 	for element in commands:
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 6a61ebf61b37b32dce5c221baf111acf21bb8916 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 3 Jul 2018 13:04:42 +0530
+Subject: [PATCH 14/47] Fixed minor issue of replacing
+
+---
+ examples/script.py | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/examples/script.py b/examples/script.py
+index ba78997..57278fc 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -102,8 +102,7 @@ def calculate_value(text):
+ 	return float(result)
+ 
+ def evaluate_expressions(commands):
+-	print("ERE")
+-	for command in commands:
++	for index, command in enumerate(commands):
+ 		if "exp" in command:
+ 			broken = command.split("[")
+ 			mystring = ""
+@@ -112,6 +111,7 @@ def evaluate_expressions(commands):
+ 			and evaluate any expressions that might be present.
+ 			Because that's how expressions are meant to be written
+ 			'''
++			print('here')
+ 			for element in broken:
+ 				if "exp" in element:
+ 					'''
+@@ -126,10 +126,9 @@ def evaluate_expressions(commands):
+ 					to_replace = "[" + element
+ 					print(to_replace)
+ 					command = command.replace(to_replace.strip(), str(result))
++					commands[index] = command
+ 					print(command)
+ 
+-
+-
+ def create_proc_objects(proc_list):
+ 	for element in proc_list:
+ 		temp_list = element.split("\n")[0]
+@@ -210,7 +209,6 @@ def parse_script(database_name, units, commands):
+ 	initalize_global_vars(commands)
+ 	initialize_procs(commands)
+ 	evaluate_expressions(commands)
+-	exit()
+ 
+ 	for element in commands:
+ 		element = element.split()
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 084ded8dc323c182e3bcfe5d4b9a49c6da557e9b Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Thu, 5 Jul 2018 16:01:29 +0530
+Subject: [PATCH 15/47] Backup
+
+---
+ examples/proc_interpreter.py | 17 ++++++++++++++++-
+ examples/script.py           | 23 +++++++++++++++++++++--
+ 2 files changed, 37 insertions(+), 3 deletions(-)
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index a1b1e49..e045e65 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -41,4 +41,19 @@ class Procedure():
+ 		self.name = proc_name
+ 		self.args = proc_args
+ 		self.global_vars = global_vars
+-		self.proc_string = element
+\ No newline at end of file
++		self.proc_string = element
++		self.local_vars = {}
++		self.commands = self.string.split("\n")
++
++	def calculate_vars(self):
++
++
++
++	def execute(self, arguments):
++		for x in zip(self.args, arguments):
++			var = '$' + str(x[0])
++			value = float(x[1])
++			self.local_vars[var] = value
++		self.calculate_vars()
++		self.evaluate_exp()
++		self.execute_maps()
+\ No newline at end of file
+diff --git a/examples/script.py b/examples/script.py
+index 57278fc..de5fe90 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -80,6 +80,11 @@ def check_vars(command):
+ 			command[iterator+3] = global_vars[str(command[iterator+3])]
+ 
+ def initalize_global_vars(commands):
++	'''
++	Find global variables and load them into the dictionary.
++	It is also assumed that all global variables are defined before
++	any of the procedures or in statements
++	'''
+ 	first_proc_line = index_containing_substring(commands, "proc")
+ 	for iterator in range(0, first_proc_line):
+ 		element = commands[iterator]
+@@ -91,17 +96,21 @@ def initalize_global_vars(commands):
+ 			switcher[command_type](element)
+ 
+ def calculate_value(text):
+-	print(text)
+ 	text = text.replace("{", "(")
+ 	text = text.replace("}", ")")
+ 	text = text.strip()
+ 	lexer = Lexer(text)
+ 	interpreter = Interpreter(lexer)
+ 	result = interpreter.expr()
+-	print(result)
+ 	return float(result)
+ 
+ def evaluate_expressions(commands):
++	'''
++	This function is responsible for evaluating expressions like
++	exp{$i+$j} or exp{$i*{$j/$k}}.
++	It evaluated these expressions and replaces them with their
++	float result in the actual "commands" list
++	'''
+ 	for index, command in enumerate(commands):
+ 		if "exp" in command:
+ 			broken = command.split("[")
+@@ -130,6 +139,11 @@ def evaluate_expressions(commands):
+ 					print(command)
+ 
+ def create_proc_objects(proc_list):
++	'''
++	Creates objects of the procedure class.
++	Each procedure is encapsulated as a class and it's object is
++	executed with a unique set of arguments whenever required
++	''' 
+ 	for element in proc_list:
+ 		temp_list = element.split("\n")[0]
+ 		proc_name = temp_list.split()[1]
+@@ -139,6 +153,11 @@ def create_proc_objects(proc_list):
+ 		script_procedures[proc_name] = Procedure(proc_name, proc_args, global_vars, element)
+ 
+ def parse_procs(commands, proc_line_position):
++	'''
++	This function is responsible for extracting proc as strings
++	from the script.
++	It returns a list of all procedures called proc_list
++	'''
+ 	proc_list = []
+ 	print(proc_line_position)
+ 	for iterator in range(len(proc_line_position)):
+-- 
+2.14.3 (Apple Git-98)
+
+
+From d55cd39f509d5a566fd07b75ec0cff202e158bb3 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Fri, 6 Jul 2018 20:27:16 +0530
+Subject: [PATCH 16/47] Now extracting procs properly
+
+---
+ examples/script.py | 67 ++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 60 insertions(+), 7 deletions(-)
+
+diff --git a/examples/script.py b/examples/script.py
+index de5fe90..7224dc8 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -45,12 +45,12 @@ def index_containing_substring(the_list, substring):
+ 	return len(the_list)
+ 
+ def find_between(s, first, last):
+-    try:
+-        start = s.index( first ) + len( first )
+-        end = s.index( last, start )
+-        return s[start:end]
+-    except ValueError:
+-        return ""
++	try:
++		start = s.index( first ) + len( first )
++		end = s.index( last, start )
++		return s[start:end]
++	except ValueError:
++		return ""
+ 
+ def replace_vars(my_string):
+ 	x = my_string
+@@ -95,6 +95,48 @@ def initalize_global_vars(commands):
+ 		if command_type == "set": 
+ 			switcher[command_type](element)
+ 
++def check_parentheses(my_string):
++	'''
++	Return True if the parentheses in string s match, otherwise False.
++	'''
++	j = 0
++	for c in my_string:
++		if c == '}':
++			j -= 1
++			if j < 0:
++				return False
++		elif c == '{':
++			j += 1
++	return j == 0
++
++def find_parentheses(s):
++	''' 
++	Find and return the location of the matching parentheses pairs in s.
++
++	Given a string, s, return a dictionary of start: end pairs giving the
++	indexes of the matching parentheses in s. Suitable exceptions are
++	raised if s contains unbalanced parentheses.
++
++	# The indexes of the open parentheses are stored in a stack, implemented
++	# as a list
++
++	'''
++	stack = []
++	parentheses_locs = {}
++	for i, c in enumerate(s):
++		if c == '(':
++			stack.append(i)
++		elif c == ')':
++			try:
++				parentheses_locs[stack.pop()] = i
++			except IndexError:
++				raise IndexError('Too many close parentheses at index {}'
++																.format(i))
++	if stack:
++		raise IndexError('No matching close parenthesis to open parenthesis '
++						 'at index {}'.format(stack.pop()))
++	return parentheses_locs
++
+ def calculate_value(text):
+ 	text = text.replace("{", "(")
+ 	text = text.replace("}", ")")
+@@ -168,7 +210,17 @@ def parse_procs(commands, proc_line_position):
+ 			proc_span = commands[proc_start : proc_end]
+ 		else :
+ 			proc_end = -1
+-			proc_span = commands[proc_start:]
++			temp_string = commands[proc_start]
++			proc_span = commands[proc_start+1:]
++			for line_number, line in enumerate(proc_span):
++				temp_string += line
++				result = check_parentheses(temp_string)
++				if result:
++					#print("end")
++					#print(temp_string)
++					print(line_number)
++					proc_span = [temp_string]
++					break
+ 
+ 		proc_string = " ".join(proc_span)
+ 		print(proc_string.strip())				#debug
+@@ -227,6 +279,7 @@ def parse_primitive(command):
+ def parse_script(database_name, units, commands):
+ 	initalize_global_vars(commands)
+ 	initialize_procs(commands)
++	exit()
+ 	evaluate_expressions(commands)
+ 
+ 	for element in commands:
+-- 
+2.14.3 (Apple Git-98)
+
+
+From 58625988ec25b3ef60987072d44f3b802bdfd31c Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Sat, 7 Jul 2018 11:12:48 +0530
+Subject: [PATCH 17/47] Code to parse procs in place. Not tested
+
+---
+ examples/proc_interpreter.py | 81 +++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 77 insertions(+), 4 deletions(-)
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index e045e65..f3e3f7c 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -43,11 +43,84 @@ class Procedure():
+ 		self.global_vars = global_vars
+ 		self.proc_string = element
+ 		self.local_vars = {}
+-		self.commands = self.string.split("\n")
++		self.commands = self.proc_string.strip().split("\n")
++		print(self.commands)
+ 
+-	def calculate_vars(self):
++	def replace_vars(self, my_string):
++		'''
++		In replacement global vars are substituted first and then local vars
++		In case of having two variables with the same name, the local vars
++		are given precedence.
++		'''
++		x = my_string
++		for variable in global_vars:
++			x = x.replace(variable, str(global_vars[variable]))
++		for variable_name in self.local_vars:
++			x = x.replace(variable, str(self.local_vars[variable]))
++		return x
++
++	def calculate_value(self, text):
++		'''
++		Helper functino for evaluate_exp()
++		'''
++		text = text.replace("{", "(")
++		text = text.replace("}", ")")
++		text = text.strip()
++		lexer = Lexer(text)
++		interpreter = Interpreter(lexer)
++		result = interpreter.expr()
++		return float(result)
++
++	def evaluate_exp(self, command):
++		broken = command.split("[")
++		mystring = ""
++		'''
++		We iterate over any every command after its split at "["
++		and evaluate any expressions that might be present.
++		Because that's how expressions are meant to be written
+ 
++		mystring now holds the the text contained within an expression
++		Eg : 
++		> [exp{$j - $i}]
++		> mystring = {$j - $i}
++		'''
++		print('here')
++		for element in broken:
++			if "exp" in element:
++				my_string = find_between(element, "exp", "]")
++				text 	  = replace_vars(my_string)
++				result    = calculate_value(text)
++				to_replace = "[" + element
++				command   = command.replace(to_replace.strip(), str(result))
++				self.commands[index] = command
++		return
+ 
++	def set_var_value(self, command):
++		split_command = command.split()
++		variable_name = '$' + command[1]
++		if command[2].isdigit():
++			self.local_vars[variable_name] = float(command[2])
++		elif command[2].startswith("$"):
++			if command[2] in global_vars:
++				self.local_vars[variable_name] = float(global_vars[command[2]])
++			else:
++				self.local_vars[variable_name] = float(self.local_vars[command[2]])
++		else:
++			value = evaluate_exp(command[2])
++			self.local_vars[variable_name] = float(value)
++
++		return
++
++	def calculate_vars(self):
++		for line_num, command in emumerate(self.commands):
++			element = command
++			element = element.split()
++			if element == []:			#Blank line
++				continue
++			command_type = element[0]
++			if command_type == "set": 
++				set_var_value(command)
++		return
+ 
+ 	def execute(self, arguments):
+ 		for x in zip(self.args, arguments):
+@@ -55,5 +128,5 @@ class Procedure():
+ 			value = float(x[1])
+ 			self.local_vars[var] = value
+ 		self.calculate_vars()
+-		self.evaluate_exp()
+-		self.execute_maps()
+\ No newline at end of file
++		#self.evaluate_exp()
++		#self.execute_maps()
+\ No newline at end of file
+-- 
+2.14.3 (Apple Git-98)
+
+
+From ecf1c56718a3e118939063b39f2a3ae587fc7fb0 Mon Sep 17 00:00:00 2001
+From: Jaipal Singh <jpsinghgoud@gmail.com>
+Date: Tue, 10 Jul 2018 09:10:42 +0530
+Subject: [PATCH 18/47] Almost there
+
+---
+ examples/proc_interpreter.py | 61 +++++++++++++++++++++++++++++++----------
+ examples/script.py           | 65 ++++++++++++++++++++++++++------------------
+ 2 files changed, 85 insertions(+), 41 deletions(-)
+
+diff --git a/examples/proc_interpreter.py b/examples/proc_interpreter.py
+index f3e3f7c..f0a8ae1 100644
+--- a/examples/proc_interpreter.py
++++ b/examples/proc_interpreter.py
+@@ -44,7 +44,15 @@ class Procedure():
+ 		self.proc_string = element
+ 		self.local_vars = {}
+ 		self.commands = self.proc_string.strip().split("\n")
+-		print(self.commands)
++		#print(self.commands)
++
++	def find_between(self, s, first, last):
++		try:
++			start = s.index( first ) + len( first )
++			end = s.index( last, start )
++			return s[start:end]
++		except ValueError:
++			return ""
+ 
+ 	def replace_vars(self, my_string):
+ 		'''
+@@ -52,11 +60,15 @@ class Procedure():
+ 		In case of having two variables with the same name, the local vars
+ 		are given precedence.
+ 		'''
++		print(my_string)
+ 		x = my_string
+-		for variable in global_vars:
+-			x = x.replace(variable, str(global_vars[variable]))
++		for variable in self.global_vars:
++			x = x.replace(variable, str(self.global_vars[variable]))
++			print(x)
++		print(self.local_vars)
+ 		for variable_name in self.local_vars:
+ 			x = x.replace(variable, str(self.local_vars[variable]))
++			print(x)
+ 		return x
+ 
+ 	def calculate_value(self, text):
+@@ -71,7 +83,8 @@ class Procedure():
+ 		result = interpreter.expr()
+ 		return float(result)
+ 
+-	def evaluate_exp(self, command):
++	def evaluate_exp(self, command, index):
++		calculated_value = 0.0
+ 		broken = command.split("[")
+ 		mystring = ""
+ 		'''
+@@ -87,15 +100,17 @@ class Procedure():
+ 		print('here')
+ 		for element in broken:
+ 			if "exp" in element:
+-				my_string = find_between(element, "exp", "]")
+-				text 	  = replace_vars(my_string)
+-				result    = calculate_value(text)
++				my_string = self.find_between(element, "exp", "]")
++				text 	  = self.replace_vars(my_string)
++				result    = self.calculate_value(text)
+ 				to_replace = "[" + element
+ 				command   = command.replace(to_replace.strip(), str(result))
++				calculated_value = float(result)
+ 				self.commands[index] = command
+-		return
++				print(command)
++		return calculated_value
+ 
+-	def set_var_value(self, command):
++	def set_var_value(self, command, index):
+ 		split_command = command.split()
+ 		variable_name = '$' + command[1]
+ 		if command[2].isdigit():
+@@ -106,27 +121,45 @@ class Procedure():
+ 			else:
+ 				self.local_vars[variable_name] = float(self.local_vars[command[2]])
+ 		else:
+-			value = evaluate_exp(command[2])
++			value = self.evaluate_exp(command[2], index)
+ 			self.local_vars[variable_name] = float(value)
+ 
+ 		return
+ 
+ 	def calculate_vars(self):
+-		for line_num, command in emumerate(self.commands):
++		for line_num, command in enumerate(self.commands):
+ 			element = command
+ 			element = element.split()
+ 			if element == []:			#Blank line
+ 				continue
+ 			command_type = element[0]
+ 			if command_type == "set": 
+-				set_var_value(command)
++				self.set_var_value(command, line_num)
+ 		return
+ 
++	def evaluate_in(self, command, index):
++		print(self.local_vars)
++		self.evaluate_exp(command, index)
++		print(elements)
++		return
++
++	def execute_in(self):
++		for line_num, command in enumerate(self.commands):
++			element = command.split()
++			if element == []:
++				continue
++			command_type = element[0]
++			if command_type == "in":
++				self.evaluate_in(command, line_num)
++
+ 	def execute(self, arguments):
++		print(arguments)
+ 		for x in zip(self.args, arguments):
+ 			var = '$' + str(x[0])
+ 			value = float(x[1])
++			print(var, value)
+ 			self.local_vars[var] = value
+ 		self.calculate_vars()
+-		#self.evaluate_exp()
+-		#self.execute_maps()
+\ No newline at end of file
++		self.execute_in()
++
++
+diff --git a/examples/script.py b/examples/script.py
+index 7224dc8..7091496 100644
+--- a/examples/script.py
++++ b/examples/script.py
+@@ -36,7 +36,7 @@ from arithematic_parser import *
+ from brlcad.primitives import *
+ 
+ global_vars = {}
+-script_procedures  = {}
++script_procedures = {}
+ 
+ def index_containing_substring(the_list, substring):
+ 	for i, s in enumerate(the_list):
+@@ -99,17 +99,17 @@ def check_parentheses(my_string):
+ 	'''
+ 	Return True if the parentheses in string s match, otherwise False.
+ 	'''
+-	j = 0
+-	for c in my_string:
+-		if c == '}':
+-			j -= 1
+-			if j < 0:
++	iterator_1 = 0
++	for iterator_2 in my_string:
++		if iterator_2 == '}':
++			iterator_1 -= 1
++			if iterator_1 < 0:
+ 				return False
+-		elif c == '{':
+-			j += 1
+-	return j == 0
++		elif iterator_2 == '{':
++			iterator_1 += 1
++	return iterator_1 == 0
+ 
+-def find_parentheses(s):
++def find_parentheses(my_string):
+ 	''' 
+ 	Find and return the location of the matching parentheses pairs in s.
+ 
+@@ -123,10 +123,10 @@ def find_parentheses(s):
+ 	'''
+ 	stack = []
+ 	parentheses_locs = {}
+-	for i, c in enumerate(s):
+-		if c == '(':
++	for i, iterator_1 in enumerate(my_string):
++		if iterator_1 == '(':
+ 			stack.append(i)
+-		elif c == ')':
++		elif iterator_1 == ')':
+ 			try:
+ 				parentheses_locs[stack.pop()] = i
+ 			except IndexError:
+@@ -146,15 +146,17 @@ def calculate_value(text):
+ 	result = interpreter.expr()
+ 	return float(result)
+ 
+-def evaluate_expressions(commands):
++def evaluate_expressions(commands, procs_end):
+ 	'''
+ 	This function is responsible for evaluating expressions like
+ 	exp{$i+$j} or exp{$i*{$j/$k}}.
+ 	It evaluated these expressions and replaces them with their
+ 	float result in the actual "commands" list
+ 	'''
+-	for index, command in enumerate(commands):
++	print(procs_end)
++	for index, command in enumerate(commands[procs_end:]):
+ 		if "exp" in command:
++			print(command)
+ 			broken = command.split("[")
+ 			mystring = ""
+ 			'''
+@@ -162,7 +164,6 @@ def evaluate_expressions(commands):
+ 			and evaluate any expressions that might be present.
+ 			Because that's how expressions are meant to be written
+ 			'''
+-			print('here')
+ 			for element in broken:
+ 				if "exp" in element:
+ 					'''
+@@ -201,6 +202,7 @@ def parse_procs(commands, proc_line_position):
+ 	It returns a list of all procedures called proc_list
+ 	'''
+ 	proc_list = []
++	procs_end = 0
+ 	print(proc_line_position)
+ 	for iterator in range(len(proc_line_position)):
+ 		proc_start = proc_line_position[iterator]
+@@ -216,16 +218,13 @@ def parse_procs(commands, proc_line_position):
+ 				temp_string += line
+ 				result = check_parentheses(temp_string)
+ 				if result:
+-					#print("end")
+-					#print(temp_string)
+-					print(line_number)
++					procs_end = proc_start+line_number+2 #This keeps track of the last line of proc definition
+ 					proc_span = [temp_string]
+ 					break
+ 
+ 		proc_string = " ".join(proc_span)
+-		print(proc_string.strip())				#debug
+ 		proc_list.append(proc_string.strip())
+-	return proc_list
++	return proc_list, procs_end
+ 
+ def initialize_procs(commands):
+ 	"""
+@@ -244,8 +243,9 @@ def initialize_procs(commands):
+ 		if command_type == "proc":
+ 			proc_line_position.append(iterator)
+ 
+-	proc_list = parse_procs(commands, proc_line_position)
++	proc_list, procs_end = parse_procs(commands, proc_line_position)
+ 	create_proc_objects(proc_list)
++	return procs_end
+ 
+ def parse_combination():
+ 	return
+@@ -278,14 +278,25 @@ def parse_primitive(command):
+ 
+ def parse_script(database_name, units, commands):
+ 	initalize_global_vars(commands)
+-	initialize_procs(commands)
+-	exit()
+-	evaluate_expressions(commands)
++	procs_end = initialize_procs(commands)
++	evaluate_expressions(commands, procs_end)
+ 
+-	for element in commands:
++	for element in commands[procs_end:]:
++		print(element)
+ 		element = element.split()
++		if element == []:
++			continue    					#Blank Line
+ 		command_type = element[0]
+-		switcher[command_type](element)
++		if command_type == 'in':
++			switcher[command_type](element)
++		else:
++			print("Executing Procedure : ", command_type)
++			for index, argument in enumerate(element[1:]):
++				if not argument.isdigit():
++					var_name = "$" + argument
++					element[index + 1] = str(global_vars[var_name])
++			script_procedures[command_type].execute(element[1:])
++
+ 
+ def draw_sphere(primitive_name, arguments):
+ 	center = [float(x) for x in arguments[:3]]
+-- 
+2.14.3 (Apple Git-98)
